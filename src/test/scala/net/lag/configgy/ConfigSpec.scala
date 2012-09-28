@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
 import _root_.java.io.{File, FileOutputStream}
 import _root_.java.lang.management.ManagementFactory

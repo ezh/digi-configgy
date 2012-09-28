@@ -20,7 +20,7 @@ import _root_.java.io._
 import _root_.java.net.{DatagramPacket, DatagramSocket, InetSocketAddress}
 import _root_.java.util.{Calendar, Date, TimeZone, logging => javalog}
 import _root_.org.specs._
-import _root_.net.lag.configgy.Config
+import _root_.org.digimead.configgy.Config
 import _root_.net.lag.extensions._
 import net.lag.TestHelper
 
@@ -163,7 +163,7 @@ object LoggingSpec extends Specification with TestHelper {
     "log package names" in {
       val log1 = Logger.get("net.lag.logging.Skeletor")
       log1.warning("I am coming for you!")
-      val log2 = Logger.get("net.lag.configgy.Skeletor")
+      val log2 = Logger.get("org.digimead.configgy.Skeletor")
       log2.warning("I am also coming for you!")
 
       eat(handler.toString) mustEqual
@@ -176,7 +176,7 @@ object LoggingSpec extends Specification with TestHelper {
       log2.warning("I am also coming for you!")
       eat(handler.toString) mustEqual
         List("WAR [20080329-05:53:16.722] net.lag.logging: I am coming for you!",
-             "WAR [20080329-05:53:16.722] net.lag.configgy: I am also coming for you!")
+             "WAR [20080329-05:53:16.722] org.digimead.configgy: I am also coming for you!")
     }
 
     "log level names" in {

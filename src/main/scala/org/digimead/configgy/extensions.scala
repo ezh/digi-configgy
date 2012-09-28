@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package net.lag
+package org.digimead.configgy
 
 import scala.util.matching.Regex
-
 
 final class ConfiggyString(wrapped: String) {
   /**
@@ -148,7 +147,6 @@ final class ConfiggyByteArray(wrapped: Array[Byte]) {
     out.toString
   }
 }
-
 
 object extensions {
   implicit def stringToConfiggyString(s: String): ConfiggyString = new ConfiggyString(s)

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
 import org.specs._
 import net.lag.extensions._

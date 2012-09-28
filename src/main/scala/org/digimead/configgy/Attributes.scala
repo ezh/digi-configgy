@@ -1,5 +1,6 @@
-/*
+/**
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
+ * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -14,20 +15,22 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
-import java.util.regex.Pattern
-import javax.{management => jmx}
-import scala.collection.{immutable, mutable, Map}
+import scala.Array.fallbackCanBuildFrom
+import scala.collection.Map
+import scala.collection.immutable
+import scala.collection.mutable
 import scala.util.Sorting
-import net.lag.extensions._
 
+import org.digimead.configgy.extensions._
+
+import javax.{ management => jmx }
 
 private[configgy] abstract class Cell
 private[configgy] case class StringCell(value: String) extends Cell
 private[configgy] case class AttributesCell(attr: Attributes) extends Cell
 private[configgy] case class StringListCell(array: Array[String]) extends Cell
-
 
 /**
  * Actual implementation of ConfigMap.
@@ -71,7 +74,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
   }
 
   override def equals(obj: Any) = {
-    if (! obj.isInstanceOf[Attributes]) {
+    if (!obj.isInstanceOf[Attributes]) {
       false
     } else {
       val other = obj.asInstanceOf[Attributes]
@@ -401,15 +404,16 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
   }
 
   def asJmxAttributes(): Array[jmx.MBeanAttributeInfo] = {
-    cells.map { case (key, value) =>
-      value match {
-        case StringCell(_) =>
-          new jmx.MBeanAttributeInfo(key, "java.lang.String", "", true, true, false)
-        case StringListCell(_) =>
-          new jmx.MBeanAttributeInfo(key, "java.util.List", "", true, true, false)
-        case AttributesCell(_) =>
-          null
-      }
+    cells.map {
+      case (key, value) =>
+        value match {
+          case StringCell(_) =>
+            new jmx.MBeanAttributeInfo(key, "java.lang.String", "", true, true, false)
+          case StringListCell(_) =>
+            new jmx.MBeanAttributeInfo(key, "java.util.List", "", true, true, false)
+          case AttributesCell(_) =>
+            null
+        }
     }.filter { x => x ne null }.toList.toArray
   }
 

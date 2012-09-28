@@ -1,5 +1,6 @@
-/*
+/**
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
+ * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -14,13 +15,12 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
 import scala.collection.mutable.Stack
-import scala.util.parsing.combinator._
-import scala.util.parsing.input.CharSequenceReader
-import net.lag.extensions._
+import scala.util.parsing.combinator.RegexParsers
 
+import org.digimead.configgy.extensions._
 
 /**
  * An exception thrown when parsing a config file, if there was an error
@@ -31,7 +31,6 @@ class ParseException(reason: String, cause: Throwable) extends Exception(reason,
   def this(reason: String) = this(reason, null)
   def this(cause: Throwable) = this(null, cause)
 }
-
 
 private[configgy] class ConfigParser(var attr: Attributes, val importer: Importer) extends RegexParsers {
 
@@ -49,9 +48,8 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
   val assignToken: Parser[String] = """=|\?=""".r
   val tagNameToken: Parser[String] = """[a-zA-Z][-\w]*""".r
 
-
   def root = rep(includeFile | includeOptFile | assignment | toggle | sectionOpen | sectionClose |
-                 sectionOpenBrace | sectionCloseBrace)
+    sectionOpenBrace | sectionCloseBrace)
 
   def includeFile = "include" ~> string ^^ {
     case filename: String =>
@@ -66,7 +64,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
   def assignment = identToken ~ assignToken ~ value ^^ {
     case k ~ a ~ v => if (a match {
       case "=" => true
-      case "?=" => ! attr.contains(prefix + k)
+      case "?=" => !attr.contains(prefix + k)
     }) v match {
       case x: Long => attr(prefix + k) = x
       case x: String => attr(prefix + k) = x
@@ -114,13 +112,11 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
     }
   }
 
-
   def value: Parser[Any] = number | string | stringList | trueFalse
   def number = numberToken ^^ { x => if (x.contains('.')) x else x.toLong }
   def string = stringToken ^^ { s => attr.interpolate(prefix, s.substring(1, s.length - 1).unquoteC) }
   def stringList = "[" ~> repsep(string | numberToken, opt(",")) <~ (opt(",") ~ "]") ^^ { list => list.toArray }
   def trueFalse: Parser[Boolean] = ("(true|on)".r ^^ { x => true }) | ("(false|off)".r ^^ { x => false })
-
 
   def parse(in: String): Unit = {
     parseAll(root, in) match {

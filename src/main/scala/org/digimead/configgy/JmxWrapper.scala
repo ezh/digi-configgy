@@ -1,5 +1,6 @@
-/*
+/**
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
+ * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -14,41 +15,32 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
-import javax.{management => jmx}
+import javax.{ management => jmx }
 import scala.collection.JavaConversions
-import net.lag.logging.Logger
+import org.digimead.digi.lib.log.Logging
 
-
-class JmxWrapper(node: Attributes) extends jmx.DynamicMBean {
-
-  private val log = Logger.get
-
+class JmxWrapper(node: Attributes) extends jmx.DynamicMBean with Logging {
   val operations: Array[jmx.MBeanOperationInfo] = Array(
     new jmx.MBeanOperationInfo("set", "set a string value",
       Array(
         new jmx.MBeanParameterInfo("key", "java.lang.String", "config key"),
-        new jmx.MBeanParameterInfo("value", "java.lang.String", "string value")
-      ), "void", jmx.MBeanOperationInfo.ACTION),
+        new jmx.MBeanParameterInfo("value", "java.lang.String", "string value")), "void", jmx.MBeanOperationInfo.ACTION),
     new jmx.MBeanOperationInfo("remove", "remove a value",
       Array(
-        new jmx.MBeanParameterInfo("key", "java.lang.String", "config key")
-      ), "void", jmx.MBeanOperationInfo.ACTION),
+        new jmx.MBeanParameterInfo("key", "java.lang.String", "config key")), "void", jmx.MBeanOperationInfo.ACTION),
     new jmx.MBeanOperationInfo("add_list", "append a value to a list",
       Array(
         new jmx.MBeanParameterInfo("key", "java.lang.String", "config key"),
-        new jmx.MBeanParameterInfo("value", "java.lang.String", "value")
-      ), "void", jmx.MBeanOperationInfo.ACTION),
+        new jmx.MBeanParameterInfo("value", "java.lang.String", "value")), "void", jmx.MBeanOperationInfo.ACTION),
     new jmx.MBeanOperationInfo("remove_list", "remove a value to a list",
       Array(
         new jmx.MBeanParameterInfo("key", "java.lang.String", "config key"),
-        new jmx.MBeanParameterInfo("value", "java.lang.String", "value")
-      ), "void", jmx.MBeanOperationInfo.ACTION)
-  )
+        new jmx.MBeanParameterInfo("value", "java.lang.String", "value")), "void", jmx.MBeanOperationInfo.ACTION))
 
   def getMBeanInfo() = {
-    new jmx.MBeanInfo("net.lag.configgy.ConfigMap", "configuration node", node.asJmxAttributes(),
+    new jmx.MBeanInfo("org.digimead.configgy.ConfigMap", "configuration node", node.asJmxAttributes(),
       null, operations, null, new jmx.ImmutableDescriptor("immutableInfo=false"))
   }
 
@@ -69,7 +61,7 @@ class JmxWrapper(node: Attributes) extends jmx.DynamicMBean {
               node.setString(name, value)
             } catch {
               case e: Exception =>
-                log.warning("exception: %s", e.getMessage)
+                log.warn("exception: %s", e.getMessage)
                 throw e
             }
           case _ =>

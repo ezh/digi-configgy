@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
 import java.io.File
 import java.util.Properties
 import scala.collection.mutable
-import net.lag.extensions._
-
 
 /**
  * Use information in a local `build.properties` file to determine runtime

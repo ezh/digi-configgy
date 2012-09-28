@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
 import net.lag.TestHelper
 import _root_.java.io._

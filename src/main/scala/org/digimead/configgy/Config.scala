@@ -1,5 +1,6 @@
-/*
+/**
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
+ * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -14,21 +15,22 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
 import java.io.File
 import java.lang.management.ManagementFactory
-import javax.{management => jmx}
-import scala.collection.{Map, Set}
-import scala.collection.{immutable, mutable}
-import net.lag.extensions._
-import net.lag.logging.Logger
 
+import scala.collection.Map
+import scala.collection.mutable
+
+import org.digimead.digi.lib.log.Logging
+import org.digimead.digi.lib.log.logger.RichLogger.rich2slf4j
+
+import javax.{ management => jmx }
 
 private abstract class Phase
 private case object VALIDATE_PHASE extends Phase
 private case object COMMIT_PHASE extends Phase
-
 
 private class SubscriptionNode {
   var subscribers = new mutable.HashSet[Subscriber]
@@ -83,7 +85,7 @@ private class SubscriptionNode {
       case Nil => nextNodes = map.iterator
       case segment :: _ => {
         map.get(segment) match {
-          case None => return     // done!
+          case None => return // done!
           case Some(node) => nextNodes = Iterator.single((segment, node))
         }
       }
@@ -103,7 +105,6 @@ private class SubscriptionNode {
   }
 }
 
-
 /**
  * An attribute map of key/value pairs and subscriptions, where values may
  * be other attribute maps. Config objects represent the "root" of a nested
@@ -121,14 +122,12 @@ class Config extends ConfigMap {
   private var jmxSubscriptionKey: Option[SubscriptionKey] = None
   private var reloadAction: Option[() => Unit] = None
 
-
   /**
    * Importer for resolving "include" lines when loading config files.
    * By default, it's a FilesystemImporter based on the current working
    * directory.
    */
   var importer: Importer = new FilesystemImporter(new File(".").getCanonicalPath)
-
 
   /**
    * Read config data from a string and use it to populate this object.
@@ -178,7 +177,6 @@ class Config extends ConfigMap {
 
   override def toString = root.toString
 
-
   // -----  subscriptions
 
   private[configgy] def subscribe(key: String, subscriber: Subscriber): SubscriptionKey = synchronized {
@@ -198,7 +196,7 @@ class Config extends ConfigMap {
 
   private[configgy] def subscribe(key: String)(f: (Option[ConfigMap]) => Unit): SubscriptionKey = {
     subscribe(key, new Subscriber {
-      def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = { }
+      def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {}
       def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {
         f(replacement)
       }
@@ -251,13 +249,14 @@ class Config extends ConfigMap {
     val nodes = root.getJmxNodes(packageName, "")
     val nodeNames = nodes.map { case (name, bean) => name }
     // register any new nodes
-    nodes.filter { name => !(jmxNodes contains name) }.foreach { case (name, bean) =>
-      try {
-        mbs.registerMBean(bean, new jmx.ObjectName(name))
-      } catch {
-        case x: jmx.InstanceAlreadyExistsException =>
+    nodes.filter { name => !(jmxNodes contains name) }.foreach {
+      case (name, bean) =>
+        try {
+          mbs.registerMBean(bean, new jmx.ObjectName(name))
+        } catch {
+          case x: jmx.InstanceAlreadyExistsException =>
           // happens in unit tests.
-      }
+        }
     }
     // unregister nodes that vanished
     (jmxNodes -- nodeNames).foreach { name => mbs.unregisterMBean(new jmx.ObjectName(name)) }
@@ -269,7 +268,6 @@ class Config extends ConfigMap {
     }
   }
 
-
   // -----  modifications that happen within monitored Attributes nodes
 
   @throws(classOf[ValidationException])
@@ -278,7 +276,7 @@ class Config extends ConfigMap {
     val newRoot = root.copy
     val keyList = fullKey.split("\\.").toList
 
-    if (! operation(newRoot, fullKey)) {
+    if (!operation(newRoot, fullKey)) {
       return false
     }
 
@@ -307,7 +305,6 @@ class Config extends ConfigMap {
     deepChange(name, key, { (newRoot, fullKey) => newRoot.remove(fullKey) })
   }
 
-
   // -----  implement AttributeMap by wrapping our root object:
 
   def getString(key: String): Option[String] = root.getString(key)
@@ -325,12 +322,11 @@ class Config extends ConfigMap {
   def copy(): ConfigMap = root.copy()
   def copyInto[T <: ConfigMap](m: T): T = root.copyInto(m)
   def inheritFrom = root.inheritFrom
-  def inheritFrom_=(config: Option[ConfigMap]) = root.inheritFrom=(config)
+  def inheritFrom_=(config: Option[ConfigMap]) = root.inheritFrom = (config)
   def getName(): String = root.name
 }
 
-
-object Config {
+object Config extends Logging {
   /**
    * Create a config object from a config file of the given path
    * and filename. The filename must be relative to the path. The path is
@@ -342,7 +338,7 @@ object Config {
       config.loadFile(path, filename)
     } catch {
       case e: Throwable =>
-        Logger.get.critical(e, "Failed to load config file '%s/%s'", path, filename)
+        log.error("Failed to load config file '%s/%s'".format(path, filename), e)
         throw e
     }
     config
@@ -392,7 +388,7 @@ object Config {
       config.loadFile(name)
     } catch {
       case e: Throwable =>
-        Logger.get.critical(e, "Failed to load config resource '%s'", name)
+        log.error("Failed to load config resource '%s'".format(name), e)
         throw e
     }
     config

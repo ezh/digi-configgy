@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
 import scala.util.Sorting
 import net.lag.logging.{Level, Logger}

@@ -1,5 +1,6 @@
-/*
+/**
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
+ * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -14,25 +15,24 @@
  * limitations under the License.
  */
 
-package net.lag.configgy
+package org.digimead.configgy
 
 import scala.collection.Map
 import scala.util.Sorting
-import net.lag.logging.Logger
 
+import org.digimead.digi.lib.log.Logging
+import org.digimead.digi.lib.log.logger.RichLogger.rich2slf4j
 
 class ConfigException(reason: String) extends Exception(reason)
-
 
 /**
  * Abstract trait for a map of string keys to strings, string lists, or (nested) ConfigMaps.
  * Integers and booleans may also be stored and retrieved, but they are converted to/from
  * strings in the process.
  */
-trait ConfigMap {
+trait ConfigMap extends Logging {
   private val TRUE = "true"
   private val FALSE = "false"
-
 
   // -----  required methods
 
@@ -148,7 +148,6 @@ trait ConfigMap {
    * Return any ConfigMap that is used as a fall back on lookups.
    */
   def inheritFrom: Option[ConfigMap]
-
 
   // -----  convenience methods
 
@@ -319,7 +318,7 @@ trait ConfigMap {
    */
   def subscribe(f: (Option[ConfigMap]) => Unit): SubscriptionKey = {
     subscribe(new Subscriber {
-      def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = { }
+      def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {}
       def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {
         f(replacement)
       }
@@ -336,15 +335,13 @@ trait ConfigMap {
 
   def copyInto(obj: AnyRef) {
     val cls = obj.getClass
-    val log = Logger.get(cls)
     val methods = cls.getMethods().filter { method =>
       method.getName().endsWith("_$eq") && method.getParameterTypes().size == 1
     }.toList
     keys.foreach { key =>
       val setters = methods.filter { _.getName() == key + "_$eq" }
-      if (setters.size == 0) {
-        log.warning("Ignoring config key '%s' which doesn't have a setter in class %s", key, cls)
-      }
+      if (setters.size == 0)
+        log.warn("Ignoring config key '%s' which doesn't have a setter in class %s".format(key, cls))
       setters.foreach { method =>
         val expectedType = method.getParameterTypes().head.getCanonicalName
         val param = expectedType match {
