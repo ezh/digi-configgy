@@ -1,5 +1,8 @@
-/*
+/**
+ * Digi Configgy is a library for handling configurations
+ *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
+ * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -16,71 +19,68 @@
 
 package org.digimead.configgy
 
+import scala.Array.canBuildFrom
 import scala.util.Sorting
-import net.lag.logging.{Level, Logger}
-import org.specs._
 
+import org.scalatest.FunSpec
+import org.scalatest.matchers.ShouldMatchers
 
-class AttributesSpec extends Specification {
-
-  "Attributes" should {
-    "set values" in {
+class AttributesSpec extends FunSpec with ShouldMatchers {
+  describe("An attributes") {
+    it("should set values") {
       val s = new Attributes(null, "root")
-      s.toString mustEqual "{root: }"
+      s.dump should be("{root: }")
       s.setString("name", "Communist")
-      s.toString mustEqual "{root: name=\"Communist\" }"
+      s.dump should be("{root: name=\"Communist\" }")
       s.setInt("age", 8)
-      s.toString mustEqual "{root: age=\"8\" name=\"Communist\" }"
+      s.dump should be("{root: age=\"8\" name=\"Communist\" }")
       s.setInt("age", 19)
-      s.toString mustEqual "{root: age=\"19\" name=\"Communist\" }"
+      s.dump should be("{root: age=\"19\" name=\"Communist\" }")
       s.setBool("sleepy", true)
-      s.toString mustEqual "{root: age=\"19\" name=\"Communist\" sleepy=\"true\" }"
+      s.dump should be("{root: age=\"19\" name=\"Communist\" sleepy=\"true\" }")
 
       // try both APIs.
       val s2 = new Attributes(null, "root")
-      s2.toString mustEqual "{root: }"
+      s2.dump should be("{root: }")
       s2("name") = "Communist"
-      s2.toString mustEqual "{root: name=\"Communist\" }"
+      s2.dump should be("{root: name=\"Communist\" }")
       s2("age") = 8
-      s2.toString mustEqual "{root: age=\"8\" name=\"Communist\" }"
+      s2.dump should be("{root: age=\"8\" name=\"Communist\" }")
       s2("age") = 19
-      s2.toString mustEqual "{root: age=\"19\" name=\"Communist\" }"
+      s2.dump should be("{root: age=\"19\" name=\"Communist\" }")
       s2("sleepy") = true
-      s2.toString mustEqual "{root: age=\"19\" name=\"Communist\" sleepy=\"true\" }"
+      s2.dump should be("{root: age=\"19\" name=\"Communist\" sleepy=\"true\" }")
     }
-
-    "get values" in {
+    it("should get values") {
       val s = new Attributes(null, "root")
       s("name") = "Communist"
       s("age") = 8
       s("sleepy") = true
       s("money") = 1900500400300L
-      s.getString("name", "") mustEqual "Communist"
-      s.getInt("age", 999) mustEqual 8
-      s.getInt("unknown", 500) mustEqual 500
-      s.getLong("money", 0) mustEqual 1900500400300L
-      s("name") mustEqual "Communist"
-      s("age", null) mustEqual "8"
-      s("age", "500") mustEqual "8"
-      s("age", 500) mustEqual 8
-      s("unknown", "500") mustEqual "500"
-      s("money", 0L) mustEqual 1900500400300L
-      s("money").toLong mustEqual 1900500400300L
-      s("age").toInt mustEqual 8
-      s("sleepy").toBoolean mustEqual true
+      s.getString("name", "") should be("Communist")
+      s.getInt("age", 999) should be(8)
+      s.getInt("unknown", 500) should be(500)
+      s.getLong("money", 0) should be(1900500400300L)
+      s("name") should be("Communist")
+      s("age", null) should be("8")
+      s("age", "500") should be("8")
+      s("age", 500) should be(8)
+      s("unknown", "500") should be("500")
+      s("money", 0L) should be(1900500400300L)
+      s("money").toLong should be(1900500400300L)
+      s("age").toInt should be(8)
+      s("sleepy").toBoolean should be(true)
     }
-
-    "case-preserve keys in get/set" in {
+    it("should case-preserve keys in get/set") {
       val s = new Attributes(null, "")
       s("Name") = "Communist"
       s("AGE") = 8
-      s("Name") mustEqual "Communist"
-      s("naME", "") mustEqual ""
-      s("age", 0) mustEqual 0
-      s("AGE") mustEqual "8"
+      s("Name") should be("Communist")
+      s("naME", "") should be("")
+      s("age", 0) should be(0)
+      s("AGE") should be("8")
     }
-
-    "set compound values" in {
+    it("should set compound values") {
       val s = new Attributes(null, "")
       s("name") = "Communist"
       s("age") = 8
@@ -88,34 +88,31 @@ class AttributesSpec extends Specification {
       s("diet.food") = "Meow Mix"
       s("diet.liquid") = "water"
       s("data") = "\r\r\u00ff\u00ff"
-      s.toString mustEqual ("{: age=\"8\" data=\"\\r\\r\\xff\\xff\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } " +
+      s.dump should be("{: age=\"8\" data=\"\\r\\r\\xff\\xff\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } " +
         "disposition=\"fighter\" name=\"Communist\" }")
     }
-
-    "know what it contains" in {
+    it("should know what it contains") {
       val s = new Attributes(null, "")
       s("name") = "Communist"
       s("age") = 8
       s("diet.food") = "Meow Mix"
       s("diet.liquid") = "water"
-      s.toString mustEqual "{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }"
-      s.contains("age") mustBe true
-      s.contains("unknown") mustBe false
-      s.contains("diet.food") mustBe true
-      s.contains("diet.gas") mustBe false
-      s.toString mustEqual "{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }"
+      s.dump should be("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }")
+      s.contains("age") should be(true)
+      s.contains("unknown") should be(false)
+      s.contains("diet.food") should be(true)
+      s.contains("diet.gas") should be(false)
+      s.dump should be("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }")
     }
-
-    "auto-vivify" in {
+    it("should auto-vivify") {
       val s = new Attributes(null, "")
       s("a.b.c") = 8
-      s.toString mustEqual "{: a={a: b={a.b: c=\"8\" } } }"
-      s.getString("a.d.x") mustBe None
+      s.dump should be("{: a={a: b={a.b: c=\"8\" } } }")
+      s.getString("a.d.x") should be(None)
       // shouldn't have changed the attr map:
-      s.toString mustEqual "{: a={a: b={a.b: c=\"8\" } } }"
+      s.dump should be("{: a={a: b={a.b: c=\"8\" } } }")
     }
-
-    "compare with ==" in {
+    it("should compare with ==") {
       val s = new Attributes(null, "root")
       s("name") = "Communist"
       s("age") = 8
@@ -124,22 +121,20 @@ class AttributesSpec extends Specification {
       t("name") = "Communist"
       t("age") = 8
       t("diet.food.dry") = "Meow Mix"
-      s mustEqual t
+      s should be(t)
     }
-
-    "remove values" in {
+    it("should remove values") {
       val s = new Attributes(null, "")
       s("name") = "Communist"
       s("age") = 8
       s("diet.food") = "Meow Mix"
       s("diet.liquid") = "water"
-      s.toString mustEqual "{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }"
-      s.remove("diet.food") mustBe true
-      s.remove("diet.food") mustBe false
-      s.toString mustEqual "{: age=\"8\" diet={diet: liquid=\"water\" } name=\"Communist\" }"
+      s.dump should be("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }")
+      s.remove("diet.food") should be(true)
+      s.remove("diet.food") should be(false)
+      s.dump should be("{: age=\"8\" diet={diet: liquid=\"water\" } name=\"Communist\" }")
     }
-
-    "convert to a map" in {
+    it("should convert to a map") {
       val s = new Attributes(null, "")
       s("name") = "Communist"
       s("age") = 8
@@ -151,11 +146,10 @@ class AttributesSpec extends Specification {
       // turn it into a sorted list, so we get a deterministic answer
       val keyList = map.keys.toList.toArray
       Sorting.quickSort(keyList)
-      (for (k <- keyList) yield (k + "=" + map(k))).mkString("{ ", ", ", " }") mustEqual
-        "{ age=8, diet.food=Meow Mix, diet.liquid=water, disposition=fighter, name=Communist }"
+      (for (k <- keyList) yield (k + "=" + map(k))).mkString("{ ", ", ", " }") should be(
+        "{ age=8, diet.food=Meow Mix, diet.liquid=water, disposition=fighter, name=Communist }")
     }
-
-    "copy" in {
+    it("should copy") {
       val s = new Attributes(null, "")
       s("name") = "Communist"
       s("age") = 8
@@ -163,16 +157,15 @@ class AttributesSpec extends Specification {
       s("diet.liquid") = "water"
       val t = s.copy()
 
-      s.toString mustEqual "{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }"
-      t.toString mustEqual "{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }"
+      s.dump should be("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }")
+      t.dump should be("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }")
 
       s("diet.food") = "fish"
 
-      s.toString mustEqual "{: age=\"8\" diet={diet: food=\"fish\" liquid=\"water\" } name=\"Communist\" }"
-      t.toString mustEqual "{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }"
+      s.dump should be("{: age=\"8\" diet={diet: food=\"fish\" liquid=\"water\" } name=\"Communist\" }")
+      t.dump should be("{: age=\"8\" diet={diet: food=\"Meow Mix\" liquid=\"water\" } name=\"Communist\" }")
     }
-
-    "copy with inheritance" in {
+    it("should copy with inheritance") {
       val s = new Attributes(null, "s")
       s("name") = "Communist"
       s("age") = 1
@@ -182,30 +175,27 @@ class AttributesSpec extends Specification {
       t.inheritFrom = Some(s)
 
       val x = t.copy()
-      t.toString mustEqual "{t (inherit=s): age=\"8\" disposition=\"hungry\" }"
-      x.toString mustEqual "{t: age=\"8\" disposition=\"hungry\" name=\"Communist\" }"
+      t.dump should be("{t (inherit=s): age=\"8\" disposition=\"hungry\" }")
+      x.dump should be("{t: age=\"8\" disposition=\"hungry\" name=\"Communist\" }")
     }
-
-    "find lists" in {
+    it("should find lists") {
       val s = new Attributes(null, "")
       s("port") = 6667
       s("hosts") = List("localhost", "skunk.example.com")
-      s.getList("hosts").toList mustEqual List("localhost", "skunk.example.com")
-      s.getList("non-hosts").toList mustEqual Nil
+      s.getList("hosts").toList should be(List("localhost", "skunk.example.com"))
+      s.getList("non-hosts").toList should be(Nil)
     }
-
-    "add a nested ConfigMap" in {
+    it("should add a nested ConfigMap") {
       val s = new Attributes(null, "")
       val sub = new Attributes(null, "")
       s("name") = "Sparky"
       sub("name") = "Muffy"
       s.setConfigMap("dog", sub)
-      s.toString mustEqual "{: dog={dog: name=\"Muffy\" } name=\"Sparky\" }"
+      s.dump should be("{: dog={dog: name=\"Muffy\" } name=\"Sparky\" }")
       sub("age") = 10
-      s.toString mustEqual "{: dog={dog: name=\"Muffy\" } name=\"Sparky\" }"
+      s.dump should be("{: dog={dog: name=\"Muffy\" } name=\"Sparky\" }")
     }
-
-    "toConfigString" in {
+    it("should toConfigString") {
       val s = new Attributes(null, "")
       s("name") = "Sparky"
       s("age") = "10"
@@ -232,12 +222,9 @@ muffy {
 }
 name = "Sparky"
 """
-      s.toConfigString mustEqual expected
+      s.toConfigString should be(expected)
     }
-
-    "copyInto" in {
-      Logger.get("").setLevel(Level.OFF)
-
+    it("should copyInto") {
       val s = new Attributes(null, "")
       s("name") = "Sparky"
       s("age") = "10"
@@ -250,12 +237,12 @@ name = "Sparky"
       case class Person(var name: String, var age: Int, var weight: Int, var longish: Long)
       val obj = new Person("", 0, 0, 0L)
       s.copyInto(obj)
-      obj mustEqual new Person("Sparky", 10, 0, 900L)
+      obj should be(new Person("Sparky", 10, 0, 900L))
 
       case class Other(var boolish: Boolean, var doublish: Double, var floatish: Float)
       val obj2 = new Other(false, 0.0, 0.0f)
       s.copyInto(obj2)
-      obj2 mustEqual new Other(true, 2.5, 8.75f)
+      obj2 should be(new Other(true, 2.5, 8.75f))
     }
   }
 }

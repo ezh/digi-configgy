@@ -1,4 +1,6 @@
 /**
+ * Digi Configgy is a library for handling configurations
+ *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
  * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
  *
@@ -17,11 +19,14 @@
 
 package org.digimead.configgy
 
-import javax.{ management => jmx }
-import scala.collection.JavaConversions
-import org.digimead.digi.lib.log.Logging
+import scala.collection.JavaConversions._
 
-class JmxWrapper(node: Attributes) extends jmx.DynamicMBean with Logging {
+import org.slf4j.LoggerFactory
+
+import javax.{ management => jmx }
+
+class JmxWrapper(node: Attributes) extends jmx.DynamicMBean {
+  val log = LoggerFactory.getLogger(getClass)
   val operations: Array[jmx.MBeanOperationInfo] = Array(
     new jmx.MBeanOperationInfo("set", "set a string value",
       Array(
@@ -39,10 +44,14 @@ class JmxWrapper(node: Attributes) extends jmx.DynamicMBean with Logging {
         new jmx.MBeanParameterInfo("key", "java.lang.String", "config key"),
         new jmx.MBeanParameterInfo("value", "java.lang.String", "value")), "void", jmx.MBeanOperationInfo.ACTION))
 
-  def getMBeanInfo() = {
-    new jmx.MBeanInfo("org.digimead.configgy.ConfigMap", "configuration node", node.asJmxAttributes(),
-      null, operations, null, new jmx.ImmutableDescriptor("immutableInfo=false"))
-  }
+  def getMBeanInfo() =
+    new jmx.MBeanInfo("org.digimead.configgy.ConfigMap", // The name of the Java class of the MBean described by this MBeanInfo
+        "configuration node",                            // description
+        node.asJmxAttributes(),                          // attributes
+        null,                                            // constructors
+        operations,                                      // operations
+        null,                                            // notifications
+        new jmx.ImmutableDescriptor("immutableInfo=false")) // descriptor
 
   def getAttribute(name: String): AnyRef = node.asJmxDisplay(name)
 
@@ -84,7 +93,7 @@ class JmxWrapper(node: Attributes) extends jmx.DynamicMBean with Logging {
       case "remove_list" =>
         params match {
           case Array(name: String, value: String) =>
-            node.setList(name, node.getList(name).toList - value)
+            node.setList(name, node.getList(name).toList.filterNot(_ == value))
           case _ =>
             throw new jmx.MBeanException(new Exception("bad signature " + params.toList.toString))
         }
@@ -104,7 +113,7 @@ class JmxWrapper(node: Attributes) extends jmx.DynamicMBean with Logging {
   }
 
   def setAttributes(attrs: jmx.AttributeList): jmx.AttributeList = {
-    for (attr <- JavaConversions.asBuffer(attrs.asList)) setAttribute(attr)
+    for (attr <- attrs.asList) setAttribute(attr)
     attrs
   }
 }

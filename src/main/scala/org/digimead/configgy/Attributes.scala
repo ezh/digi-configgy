@@ -1,4 +1,6 @@
 /**
+ * Digi Configgy is a library for handling configurations
+ *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
  * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
  *
@@ -23,7 +25,8 @@ import scala.collection.immutable
 import scala.collection.mutable
 import scala.util.Sorting
 
-import org.digimead.configgy.extensions._
+import org.digimead.configgy.extensions.stringToConfiggyString
+import org.slf4j.LoggerFactory
 
 import javax.{ management => jmx }
 
@@ -36,13 +39,13 @@ private[configgy] case class StringListCell(array: Array[String]) extends Cell
  * Actual implementation of ConfigMap.
  * Stores items in Cell objects, and handles interpolation and key recursion.
  */
-private[configgy] class Attributes(val config: Config, val name: String) extends ConfigMap {
-
+class Attributes(val config: Configgy.Interface, val name: String) extends ConfigMap {
+  protected val log = LoggerFactory.getLogger(getClass)
   private val cells = new mutable.HashMap[String, Cell]
   private var monitored = false
   var inheritFrom: Option[ConfigMap] = None
 
-  def this(config: Config, name: String, copyFrom: ConfigMap) = {
+  def this(config: Configgy.Interface, name: String, copyFrom: ConfigMap) = {
     this(config, name)
     copyFrom.copyInto(this)
   }
@@ -51,7 +54,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
 
   def getName() = name
 
-  override def toString() = {
+  override def dump() = {
     val buffer = new StringBuilder("{")
     buffer ++= name
     buffer ++= (inheritFrom match {
@@ -64,7 +67,7 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
       buffer ++= "="
       buffer ++= (cells(key) match {
         case StringCell(x) => "\"" + x.quoteC + "\""
-        case AttributesCell(x) => x.toString
+        case AttributesCell(x) => x.dump
         case StringListCell(x) => x.mkString("[", ",", "]")
       })
       buffer ++= " "
@@ -403,29 +406,37 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
     attr
   }
 
-  def asJmxAttributes(): Array[jmx.MBeanAttributeInfo] = {
+  def asJmxAttributes(): Array[jmx.MBeanAttributeInfo] =
     cells.map {
       case (key, value) =>
         value match {
           case StringCell(_) =>
-            new jmx.MBeanAttributeInfo(key, "java.lang.String", "", true, true, false)
+            new jmx.MBeanAttributeInfo(key, // name
+              "java.lang.String", // type
+              "", // description
+              true, // isReadable   
+              true, // isWritable
+              false) // isIs
           case StringListCell(_) =>
-            new jmx.MBeanAttributeInfo(key, "java.util.List", "", true, true, false)
+            new jmx.MBeanAttributeInfo(key, // name
+              "java.util.List", // type
+              "", // description
+              true, // isReadable
+              true, // isWritable
+              false) // isIs
           case AttributesCell(_) =>
             null
         }
-    }.filter { x => x ne null }.toList.toArray
-  }
+    }.filter { x => x ne null }.toArray
 
-  def asJmxDisplay(key: String): AnyRef = {
+  def asJmxDisplay(key: String): AnyRef =
     cells.get(key) match {
       case Some(StringCell(x)) => x
       case Some(StringListCell(x)) => java.util.Arrays.asList(x: _*)
       case x => null
     }
-  }
 
-  def getJmxNodes(prefix: String, name: String): List[(String, JmxWrapper)] = {
+  def getJmxNodes(prefix: String, name: String): List[(String, JmxWrapper)] =
     (prefix + ":type=Config,name=" + (if (name == "") "(root)" else name), new JmxWrapper(this)) :: cells.flatMap { item =>
       val (key, value) = item
       value match {
@@ -434,5 +445,4 @@ private[configgy] class Attributes(val config: Config, val name: String) extends
         case _ => Nil
       }
     }.toList
-  }
 }

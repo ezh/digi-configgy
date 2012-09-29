@@ -1,4 +1,6 @@
 /**
+ * Digi Configgy is a library for handling configurations
+ *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
  * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
  *
@@ -20,8 +22,7 @@ package org.digimead.configgy
 import scala.collection.Map
 import scala.util.Sorting
 
-import org.digimead.digi.lib.log.Logging
-import org.digimead.digi.lib.log.logger.RichLogger.rich2slf4j
+import org.slf4j.Logger
 
 class ConfigException(reason: String) extends Exception(reason)
 
@@ -30,7 +31,8 @@ class ConfigException(reason: String) extends Exception(reason)
  * Integers and booleans may also be stored and retrieved, but they are converted to/from
  * strings in the process.
  */
-trait ConfigMap extends Logging {
+trait ConfigMap {
+  protected val log: Logger
   private val TRUE = "true"
   private val FALSE = "false"
 
@@ -357,6 +359,11 @@ trait ConfigMap extends Logging {
       }
     }
   }
+  
+  /**
+   * 
+   */
+  def dump(): String
 
   /**
    * If the requested key is present, return its value as a string. Otherwise, throw a
