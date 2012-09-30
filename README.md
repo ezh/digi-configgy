@@ -1,11 +1,33 @@
 Digi-Configgy
 =============
 
-Digi-Configgy is a library for handling configurations
+__A library for handling configurations__
 
-It is based on original code by Robey Pointer. Original Configgy library was deprecated by Ostrich but Ostrich serialization mechanism for saving configuration files is still broken. Also Configgy has few bright ideas implementation.
+[Documentation](https://github.com/twitter/ostrich)
 
-If you want improve it, please send mail to sbt-android-mill at digimead.org. You will be added to the group. Please, feel free to add yourself to authors.
+If you want to improve it, please send mail to sbt-android-mill at digimead.org. You will be added to the group. Please, feel free to add yourself to authors.
+
+This library was created from original works by Robey Pointer and originally posted @ <https://github.com/robey/configgy>.
+
+Original Configgy library was deprecated by [Ostrich](https://github.com/twitter/ostrich). But Ostrich serialization mechanism for saving configuration files is still broken. Also original Configgy contain few bright ideas.
+
+### Setup
+
+```scala
+libraryDependencies += Seq(
+  "org.digimead" %% "digiconfiggy" % "2.0.99"
+)
+
+resolvers += "digiconfiggy" at "http://ezh.github.com/configgy/releases"
+```
+
+Download jar files directly from the [GitHub](https://github.com/ezh/configgy/tree/release-2.0/publish/releases/org/digimead)
+
+## Target platform
+
+* Scala 2.8.0, 2.8.1, 2.8.2, 2.9.0, 2.9.0-1, 2.9.1, 2.9.2 (request for more if needed)
+* JVM 1.5+
+* The only 3rd-party library dependency is [SLF4J](http://www.slf4j.org/)
 
 ## Participate in the development ##
 
@@ -25,14 +47,10 @@ If you will create new origin/feature-* please open feature request for yourself
 * We will have a history for feature and ground for documentation
 * If week passed and there wasn't any activity + all tests passed = release a new version ;-)
 
-## Adding to your project ##
-
-  There is the only library dependency: SLF4J > 1.6
-
 AUTHORS
 -------
 
-* Robey Pointer (original Configgy developer)
+* Robey Pointer (original Configgy)
 * Alexey Aksenov
 
 LICENSE
@@ -45,5 +63,8 @@ included in the LICENSE file.
 Copyright
 ---------
 
-Copyright © 2012 Alexey B. Aksenov/Ezh. All rights reserved.
-Copyright © 2009-2010 Robey Pointer
+Copyright © 2012 Alexey B. Aksenov/Ezh.
+
+Copyright © 2009-2010 Robey Pointer.
+
+All rights reserved.
