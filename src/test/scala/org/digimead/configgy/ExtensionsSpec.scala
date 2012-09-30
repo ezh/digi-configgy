@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.digimead
+package org.digimead.configgy
 
 import org.digimead.configgy.extensions.byteArrayToConfiggyByteArray
 import org.digimead.configgy.extensions.stringToConfiggyString

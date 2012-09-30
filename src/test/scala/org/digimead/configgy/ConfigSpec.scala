@@ -32,7 +32,7 @@ import org.scalatest.matchers.ShouldMatchers
 
 import javax.{ management => jmx }
 
-class ConfigSpec extends FunSpec with ShouldMatchers with BeforeAndAfter with TestHelperLogging with TestHelperStorage {
+class ConfigSpec extends FunSpec with ShouldMatchers with TestHelperLogging with TestHelperStorage {
   type FixtureParam = Map[String, Any]
 
   override def withFixture(test: OneArgTest) {

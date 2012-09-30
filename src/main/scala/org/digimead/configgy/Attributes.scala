@@ -293,6 +293,10 @@ class Attributes(val config: Configgy.Interface, val name: String) extends Confi
     }
   }
 
+  def clear() =
+    for ((key, value) <- cells)
+      remove(key)
+
   def asMap: Map[String, String] = {
     var ret = immutable.Map.empty[String, String]
     for ((key, value) <- cells) {

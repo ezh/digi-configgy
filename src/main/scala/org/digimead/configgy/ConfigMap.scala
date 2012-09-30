@@ -110,6 +110,11 @@ trait ConfigMap {
   def remove(key: String): Boolean
 
   /**
+   * Remove all entries.
+   */
+  def clear(): Unit
+
+  /**
    * Return an iterator across the keys of this map.
    */
   def keys: Iterator[String]
@@ -359,9 +364,9 @@ trait ConfigMap {
       }
     }
   }
-  
+
   /**
-   * 
+   *
    */
   def dump(): String
 

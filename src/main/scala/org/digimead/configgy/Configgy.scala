@@ -323,6 +323,7 @@ abstract class Configgy extends Configgy.Interface {
   def setConfigMap(key: String, value: ConfigMap): Unit = root.setConfigMap(key, value)
   def contains(key: String): Boolean = root.contains(key)
   def remove(key: String): Boolean = root.remove(key)
+  def clear() = root.clear()
   def keys: Iterator[String] = root.keys
   def asMap(): Map[String, String] = root.asMap()
   def toConfigString = root.toConfigString
@@ -420,7 +421,10 @@ object Configgy {
     val implementation: Interface = new Configgy {
       override protected val log = LoggerFactory.getLogger(getClass.getPackage().getName() + ".Configgy$$")
       def init() = log.debug("initialize " + this)
-      def dispose() = log.debug("dispose " + this)
+      def dispose() {
+        log.debug("dispose " + this)
+        implementation.unregisterWithJmx
+      }
     }
   }
   /**
@@ -451,7 +455,10 @@ object Configgy {
             throw e
         }
       }
-      def dispose() = log.debug("dispose " + this)
+      def dispose() {
+        log.debug("dispose " + this)
+        implementation.unregisterWithJmx
+      }
       override def toString = "default ConfiggyFromFile implementation"
     }
   }
@@ -476,7 +483,10 @@ object Configgy {
             throw e
         }
       }
-      def dispose() = log.debug("dispose " + this)
+      def dispose() {
+        log.debug("dispose " + this)
+        implementation.unregisterWithJmx
+      }
       override def toString = "default ConfiggyFromResource implementation"
     }
   }
@@ -490,7 +500,10 @@ object Configgy {
         log.debug("initialize " + this)
         implementation.load(data)
       }
-      def dispose() = log.debug("dispose " + this)
+      def dispose() {
+        log.debug("dispose " + this)
+        implementation.unregisterWithJmx
+      }
       override def toString = "default ConfiggyFromString implementation"
     }
   }
@@ -504,7 +517,10 @@ object Configgy {
         log.debug("initialize " + this)
         for ((k, v) <- m.iterator) this(k) = v
       }
-      def dispose() = log.debug("dispose " + this)
+      def dispose() {
+        log.debug("dispose " + this)
+        implementation.unregisterWithJmx
+      }
       override def toString = "default ConfiggyFromMap implementation"
     }
   }

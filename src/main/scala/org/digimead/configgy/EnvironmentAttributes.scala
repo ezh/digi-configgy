@@ -67,6 +67,7 @@ object EnvironmentAttributes extends ConfigMap {
   }
 
   def remove(key: String): Boolean = throw new UnsupportedOperationException("read-only attributes")
+  def clear() = throw new UnsupportedOperationException("not implemented")
   def keys: Iterator[String] = (getSystemProperties().keySet ++ env.keySet).iterator
   def asMap(): Map[String, String] = throw new UnsupportedOperationException("not implemented")
   def toConfigString = throw new UnsupportedOperationException("not implemented")

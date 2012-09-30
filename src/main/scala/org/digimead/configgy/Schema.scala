@@ -18,77 +18,116 @@
 
 package org.digimead.configgy
 
-import org.slf4j.LoggerFactory
+import scala.collection.mutable.HashMap
+import scala.collection.mutable.SynchronizedMap
+
+import org.digimead.configgy.Configgy.getImplementation
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 object Schema {
   val log = LoggerFactory.getLogger(getClass)
-  @volatile private var entry = Seq[Value[_]]()
-  def dump() {
-    System.out.println("\n--------------------------")
-    System.out.println("path[is required, is exists] - description by origin")
-    System.out.println("--------------------------")
-    entry.map(e => {
-      (e.optionPath.mkString("/"), e)
-    }).sortBy(_._1).foreach {
+  private val entry = new HashMap[String, Node[_]]() with SynchronizedMap[String, Node[_]]
+
+  def apply(path: String*): Option[Node[_]] =
+    if (path.nonEmpty) entry.get(path.mkString(".")) else None
+  def clear(): Unit = entry.clear
+  def dump(): String = {
+    val buffer = new StringBuilder
+    val header = "path[is required, is exists] - description by origin"
+    buffer.append("".padTo(header.length(), "-").mkString + "\n")
+    buffer.append(header + "\n")
+    buffer.append("".padTo(header.length(), "-").mkString + "\n")
+    entry.toSeq.sortBy(_._1).foreach {
       case (path, entry) =>
         val isRequired = if (entry.required) "required" else "optional"
-        val isExists = "not exists"
-        System.out.println("%s[%s, %s] - %s by %s".format(path, isRequired, isExists, entry.description, entry.origin))
+        val isExists = if (entry.exists) "exists" else "not exists"
+        buffer.append("%s[%s, %s] - %s by %s\n".format(path, isRequired, isExists, entry.description, entry.origin))
     }
+    buffer.result
   }
-  def required[T](optionPath: String*)(description: String)(implicit log: Logger, m: Manifest[T]): Value[T] =
-    new Value[T](optionPath.toArray, description, log.getName(), true)
+  def entries(): Seq[Node[_]] = entry.values.toSeq
+  def optional[T](optionPath: String*)(description: String)(implicit log: Logger, m: Manifest[T]): Node[T] = {
+    val node = new Node[T](optionPath.toSeq, description, log.getName(), false)
+    entry(optionPath.mkString(".")) = node
+    node
+  }
+  def required[T](optionPath: String*)(description: String)(implicit log: Logger, m: Manifest[T]): Node[T] = {
+    val node = new Node[T](optionPath.toSeq, description, log.getName(), true)
+    entry(optionPath.mkString(".")) = node
+    node
+  }
+  /**
+   * @param configMap - area of validation
+   * @return sequence of required nodes that missed initialization
+   */
+  def validate(configMap: ConfigMap = Configgy): Seq[Node[_]] = {
+    if (configMap.getName.isEmpty()) {
+      log.debug("validate against whole Configgy configuration")
+      entry.filter(t => t._2.required)
+    } else {
+      log.debug("validate against configuration values at " + configMap.getName)
+      val prefix = configMap.getName + "."
+      entry.filter(t => t._2.required && t._1.startsWith(prefix))
+    }
+  }.toSeq.sortBy(_._1).filterNot(_._2.exists).map(_._2)
 
-  class Value[T](val optionPath: Array[String], val description: String,
+  case class Node[T](val nodePath: Seq[String], val description: String,
     val origin: String, val required: Boolean)(implicit m: Manifest[T]) {
-    assert(optionPath.nonEmpty, "please provide key path for configgy value")
-    assert(m <:< Value.StringManifest || m <:< Value.BooleanManifest || m <:< Value.DoubleManifest ||
-      m <:< Value.IntManifest || m <:< Value.SeqStringManifest || m <:< Value.LongManifest,
-      "unexpected Configgy value type " + m.erasure)
-    log.debug("register %s key /%s for %s".format((if (required) "required" else "optional"),
-      optionPath.mkString("/"), origin))
-    entry = entry :+ this
-    def get(): Option[T] = {
-      val prefix = optionPath.dropRight(1)
-      val suffix = optionPath.last
-      getConfigMapByPath(prefix, Configgy).map {
-        configMap =>
-          (m match {
-            case Value.StringManifest => configMap.getString(suffix)
-            case Value.BooleanManifest => configMap.getBool(suffix)
-            case Value.DoubleManifest => configMap.getDouble(suffix)
-            case Value.IntManifest => configMap.getInt(suffix)
-            case Value.SeqStringManifest => configMap.getList(suffix)
-            case Value.LongManifest => configMap.getLong(suffix)
-          }).asInstanceOf[T]
-      }
+    if (nodePath.isEmpty) throw new IllegalArgumentException("Please provide key path for configgy value")
+    m match {
+      case Node.StringManifest =>
+      case Node.BooleanManifest =>
+      case Node.DoubleManifest =>
+      case Node.IntManifest =>
+      case Node.SeqStringManifest =>
+      case Node.LongManifest =>
+      case unexpected =>
+        throw new IllegalArgumentException("Unexpected Configgy value type " + m.erasure)
     }
-    def set(value: T): Unit = {
-      val prefix = optionPath.dropRight(1)
-      val suffix = optionPath.last
-      getConfigMapByPath(prefix, Configgy).map {
-        configMap =>
-          (m match {
-            case Value.StringManifest => configMap.setString(suffix, value.asInstanceOf[String])
-            case Value.BooleanManifest => configMap.setBool(suffix, value.asInstanceOf[Boolean])
-            case Value.DoubleManifest => configMap.setDouble(suffix, value.asInstanceOf[Double])
-            case Value.IntManifest => configMap.setInt(suffix, value.asInstanceOf[Int])
-            case Value.SeqStringManifest => configMap.setList(suffix, value.asInstanceOf[Seq[String]])
-            case Value.LongManifest => configMap.setLong(suffix, value.asInstanceOf[Long])
-          }).asInstanceOf[T]
+    protected lazy val configMapGetter = getConfigMapByPath(nodePath.dropRight(1), () => Some(Configgy))
+    protected lazy val configMapSetter = getOrCreateConfigMapByPath(nodePath.dropRight(1), () => Configgy)
+    protected lazy val nodeKey = nodePath.last
+    protected lazy val nodeGetter: () => Option[T] =
+      (m match {
+        case Node.StringManifest => () => configMapGetter().flatMap(_.getString(nodePath.last))
+        case Node.BooleanManifest => () => configMapGetter().flatMap(_.getBool(nodePath.last))
+        case Node.DoubleManifest => () => configMapGetter().flatMap(_.getDouble(nodePath.last))
+        case Node.IntManifest => () => configMapGetter().flatMap(_.getInt(nodePath.last))
+        case Node.SeqStringManifest => () => configMapGetter().map(_.getList(nodePath.last))
+        case Node.LongManifest => () => configMapGetter().flatMap(_.getLong(nodePath.last))
+      }).asInstanceOf[() => Option[T]]
+    protected lazy val nodeSetter: (T) => Unit =
+      m match {
+        case Node.StringManifest => (arg: T) => configMapSetter().setString(nodePath.last, arg.asInstanceOf[String])
+        case Node.BooleanManifest => (arg: T) => configMapSetter().setBool(nodePath.last, arg.asInstanceOf[Boolean])
+        case Node.DoubleManifest => (arg: T) => configMapSetter().setDouble(nodePath.last, arg.asInstanceOf[Double])
+        case Node.IntManifest => (arg: T) => configMapSetter().setInt(nodePath.last, arg.asInstanceOf[Int])
+        case Node.SeqStringManifest => (arg: T) => configMapSetter().setList(nodePath.last, arg.asInstanceOf[Seq[String]])
+        case Node.LongManifest => (arg: T) => configMapSetter().setLong(nodePath.last, arg.asInstanceOf[Long])
       }
-    }
-    protected def getConfigMapByPath(path: Array[String], base: ConfigMap): Option[ConfigMap] =
-      if (path.isEmpty)
-        Some(base)
-      else
-        base.getConfigMap(path.head) match {
-          case Some(configMap) => getConfigMapByPath(path.tail, configMap)
-          case None => None
-        }
+    protected lazy val nodeCheck: () => Boolean = () => configMapGetter().map(_.contains(nodePath.last)).getOrElse(false)
+    protected lazy val nodeRemove: () => Boolean = () => configMapGetter().map(_.remove(nodePath.last)).getOrElse(false)
+    log.debug("register node %s[%s] by %s".format(nodePath.mkString("."), (if (required) "required" else "optional"), origin))
+
+    def apply() = nodeGetter()
+    def getConfigMap() = configMapGetter()
+    def configMap() = configMapSetter()
+    def key() = nodeKey
+    def getName() = nodePath.mkString(".")
+    def get(): Option[T] = nodeGetter()
+    def getOrElse(default: T): T =
+      get getOrElse { set(default); default }
+    def set(arg: T) = nodeSetter(arg)
+    def :=(arg: T) = nodeSetter(arg)
+    def exists() = nodeCheck()
+    def remove() = nodeRemove()
+    protected def getConfigMapByPath(path: Seq[String], base: () => Option[ConfigMap]): () => Option[ConfigMap] =
+      if (path.isEmpty) base else getConfigMapByPath(path.tail, () => base().flatMap(_.getConfigMap(path.head)))
+    protected def getOrCreateConfigMapByPath(path: Seq[String], base: () => ConfigMap): () => ConfigMap =
+      if (path.isEmpty) base else getOrCreateConfigMapByPath(path.tail, () => base().configMap(path.head))
   }
-  object Value {
+  object Node {
     val StringManifest = manifest[String]
     val BooleanManifest = manifest[Boolean]
     val DoubleManifest = manifest[Double]
