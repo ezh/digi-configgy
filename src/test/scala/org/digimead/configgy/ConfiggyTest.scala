@@ -18,6 +18,7 @@
 
 package org.digimead.configgy
 
+import java.io.File
 import java.io.FileOutputStream
 
 import org.digimead.digi.lib.log.Logging
@@ -47,34 +48,35 @@ class ConfiggyTest extends FunSuite with ShouldMatchers with BeforeAndAfter with
       Configgy.setup(new Configgy.DefaultInit)
       Configgy.getImplementation().isInstanceOf[Configgy.Interface] should be(true)
       Configgy.getImplementation() should not be (null)
-      assertLog("initialize Configgy$ with default Configgy implementation", _ == _)
       assertLog("dispose ", _.startsWith(_))
+      assertLog("initialize Configgy$ with default Configgy implementation", _ == _)
       assertLog("initialize default Configgy implementation", _ == _)
   }
 
   test("test Configgy initialization with DefaultInitFromFile") {
     config =>
       withTempFolder {
-        val data1 =
-          "name=\"Nibbler\"\n" +
-            "\n" +
-            "<log>\n" +
-            "    filename=\"" + folderName + "/test.log\"\n" +
-            "    level=\"WARNING\"\n" +
-            "</log>\n"
-        writeConfigFile("test.conf", data1)
-        Configgy.setup(new Configgy.DefaultInitFromFile(folderName, "test.conf"))
-        Configgy.getImplementation().isInstanceOf[Configgy.Interface] should be(true)
-        Configgy.getImplementation() should not be (null)
-        assertLog("initialize Configgy$ with default ConfiggyFromFile implementation", _ == _)
-        assertLog("dispose ", _.startsWith(_))
-        assertLog("initialize default ConfiggyFromFile implementation", _ == _)
+        folder =>
+          val data1 =
+            "name=\"Nibbler\"\n" +
+              "\n" +
+              "<log>\n" +
+              "    filename=\"" + folder + "/test.log\"\n" +
+              "    level=\"WARNING\"\n" +
+              "</log>\n"
+          writeConfigFile(folder, "test.conf", data1)
+          Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
+          Configgy.getImplementation().isInstanceOf[Configgy.Interface] should be(true)
+          Configgy.getImplementation() should not be (null)
+          assertLog("dispose ", _.startsWith(_))
+          assertLog("initialize Configgy$ with default ConfiggyFromFile implementation", _ == _)
+          assertLog("initialize default ConfiggyFromFile implementation", _ == _)
       }
   }
 
-  private def writeConfigFile(filename: String, data: String) = {
-    log.debug("write config file to \"%s\"".format(folderName + "/" + filename))
-    val f = new FileOutputStream(folderName + "/" + filename)
+  private def writeConfigFile(folder: File, filename: String, data: String) = {
+    log.debug("write config file to \"%s\"".format(folder.getAbsolutePath() + File.separator + filename))
+    val f = new FileOutputStream(folder.getAbsolutePath() + File.separator + filename)
     f.write(data.getBytes)
     f.close
   }

@@ -60,12 +60,17 @@ TaskKey[Unit]("publish-github") <<= TaskKey[Unit]("publish-github").dependsOn(Pa
 
 publishTo <<= baseDirectory  { (base) => Some(Resolver.file("file",  base / "publish/releases" )) }
 
+libraryDependencies ++= {
+  Seq(
+    "org.slf4j" % "slf4j-api" % "1.7.1"
+  )
+}
+
 if (sys.env.contains("LOCAL_BUILD")) {
   Seq[Project.Setting[_]](
     unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "src" / "main" / "scala" },
     libraryDependencies ++= {
       Seq(
-        "org.slf4j" % "slf4j-api" % "1.7.1",
         "org.digimead" %% "digi-lib" % "0.2" % "test",
         "org.digimead" %% "digi-lib-util" % "0.2" % "test",
         "org.digimead" %% "digi-lib-slf4j" % "0.1" % "test",
@@ -75,15 +80,8 @@ if (sys.env.contains("LOCAL_BUILD")) {
     }
   )
 } else {
-  Seq[Project.Setting[_]](
-    libraryDependencies ++= {
-      Seq(
-        "org.slf4j" % "slf4j-api" % "1.7.1"
-      )
-    }
-  )
+  Seq[Project.Setting[_]]()
 }
-
 
 parallelExecution in Test := false
 

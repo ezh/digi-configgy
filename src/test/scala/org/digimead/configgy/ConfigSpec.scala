@@ -188,21 +188,22 @@ class ConfigSpec extends FunSpec with ShouldMatchers with TestHelperLogging with
     it("should include relative files") {
       config =>
         withTempFolder {
-          val inner = new File(folderName, "inner")
-          inner.mkdir
+          folder =>
+            val inner = new File(folder, "inner")
+            inner.mkdir
 
-          val data1 = "fruit = 17\ninclude \"inner/punch.conf\"\n"
-          val f1 = new FileOutputStream(new File(folderName, "fruit.conf"))
-          f1.write(data1.getBytes)
-          f1.close
-          val data2 = "punch = 23\n"
-          val f2 = new FileOutputStream(new File(inner, "punch.conf"))
-          f2.write(data2.getBytes)
-          f2.close
+            val data1 = "fruit = 17\ninclude \"inner/punch.conf\"\n"
+            val f1 = new FileOutputStream(new File(folder, "fruit.conf"))
+            f1.write(data1.getBytes)
+            f1.close
+            val data2 = "punch = 23\n"
+            val f2 = new FileOutputStream(new File(inner, "punch.conf"))
+            f2.write(data2.getBytes)
+            f2.close
 
-          val c = (new Configgy.DefaultInit).implementation
-          c.loadFile(folderName, "fruit.conf")
-          c.dump should be("{: fruit=\"17\" punch=\"23\" }")
+            val c = (new Configgy.DefaultInit).implementation
+            c.loadFile(folder.getAbsolutePath(), "fruit.conf")
+            c.dump should be("{: fruit=\"17\" punch=\"23\" }")
         }
     }
 

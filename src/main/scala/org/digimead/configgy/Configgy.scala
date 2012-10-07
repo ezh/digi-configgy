@@ -348,8 +348,8 @@ object Configgy {
   ConfiggyInitializationArgument.foreach(setup)
 
   def setup(arg: Init): Unit = synchronized {
-    log.debug("initialize Configgy$ with " + arg.implementation)
     Option(implementation).foreach(_.dispose)
+    log.debug("initialize Configgy$ with " + arg.implementation)
     implementation = arg.implementation
     implementation.init()
   }
