@@ -1,7 +1,7 @@
 /**
  * Digi Configgy is a library for handling configurations
  *
- * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -21,6 +21,7 @@ package org.digimead.configgy
 import java.io.File
 import java.io.FileOutputStream
 
+import org.digimead.digi.lib.DependencyInjection
 import org.digimead.digi.lib.log.Logging
 import org.digimead.digi.lib.log.logger.RichLogger.rich2slf4j
 import org.digimead.lib.test.TestHelperLogging
@@ -29,28 +30,27 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.fixture.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 
-class ConfiggyTest extends FunSuite with ShouldMatchers with BeforeAndAfter with TestHelperLogging with TestHelperStorage {
+class ConfiggyTest extends FunSuite with ShouldMatchers with TestHelperLogging with TestHelperStorage {
   type FixtureParam = Map[String, Any]
-  val log = Logging.commonLogger
   implicit val timeout = 5000L
 
   override def withFixture(test: OneArgTest) {
+    DependencyInjection.get.foreach(_ => DependencyInjection.clear)
+    DependencyInjection.set(defaultConfig(test.configMap), { Logging })
     withLogging(test.configMap) {
       Configgy
       test(test.configMap)
     }
   }
 
-  before { Logging.reset() }
-
   test("test Configgy initialization with DefaultInit") {
     config =>
       Configgy.setup(new Configgy.DefaultInit)
       Configgy.getImplementation().isInstanceOf[Configgy.Interface] should be(true)
       Configgy.getImplementation() should not be (null)
-      assertLog("dispose ", _.startsWith(_))
-      assertLog("initialize Configgy$ with default Configgy implementation", _ == _)
-      assertLog("initialize default Configgy implementation", _ == _)
+      assertLog(_ startsWith _, "dispose ")
+      assertLog(_ == _, "initialize Configgy$ with default Configgy implementation")
+      assertLog(_ == _, "initialize default Configgy implementation")
   }
 
   test("test Configgy initialization with DefaultInitFromFile") {
@@ -68,9 +68,9 @@ class ConfiggyTest extends FunSuite with ShouldMatchers with BeforeAndAfter with
           Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
           Configgy.getImplementation().isInstanceOf[Configgy.Interface] should be(true)
           Configgy.getImplementation() should not be (null)
-          assertLog("dispose ", _.startsWith(_))
-          assertLog("initialize Configgy$ with default ConfiggyFromFile implementation", _ == _)
-          assertLog("initialize default ConfiggyFromFile implementation", _ == _)
+          assertLog(_ startsWith _, "dispose ")
+          assertLog(_ == _, "initialize Configgy$ with default ConfiggyFromFile implementation")
+          assertLog(_ == _, "initialize default ConfiggyFromFile implementation")
       }
   }
 

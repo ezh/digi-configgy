@@ -1,6 +1,6 @@
 /**
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
- * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -118,7 +118,7 @@ private[configgy] class ConfigParser(var attr: Attributes, val importer: Importe
   def stringList = "[" ~> repsep(string | numberToken, opt(",")) <~ (opt(",") ~ "]") ^^ { list => list.toArray }
   def trueFalse: Parser[Boolean] = ("(true|on)".r ^^ { x => true }) | ("(false|off)".r ^^ { x => false })
 
-  def parse(in: String): Unit = {
+  def parse(in: String): List[Any] = {
     parseAll(root, in) match {
       case Success(result, _) => result
       case x @ Failure(msg, z) => throw new ParseException(x.toString)

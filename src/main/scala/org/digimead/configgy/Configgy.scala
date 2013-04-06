@@ -2,7 +2,7 @@
  * Digi Configgy is a library for handling configurations
  *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
- * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -29,6 +29,8 @@ import scala.collection.mutable.HashMap
 import org.slf4j.LoggerFactory
 
 import javax.{ management => jmx }
+
+import language.implicitConversions
 
 private abstract class Phase
 private case object VALIDATE_PHASE extends Phase
@@ -263,7 +265,7 @@ abstract class Configgy extends Configgy.Interface {
         mbs.registerMBean(bean, jmxName)
     }
     // unregister nodes that vanished
-    (jmxNodes filterNot (nodeNames contains)).foreach { name =>
+    (jmxNodes filterNot (nodeNames.contains)).foreach { name =>
       log.debug("unregister jmx MBean " + name)
       mbs.unregisterMBean(new jmx.ObjectName(name))
     }
@@ -342,7 +344,7 @@ abstract class Configgy extends Configgy.Interface {
  */
 object Configgy {
   implicit def getImplementation(c: Configgy.type = Configgy): Interface = c.implementation
-  private var implementation: Interface = null
+  private var implementation: Interface = _
   val log = LoggerFactory.getLogger(getClass)
 
   ConfiggyInitializationArgument.foreach(setup)
@@ -448,7 +450,6 @@ object Configgy {
         try {
           log.debug("loading file {}", file)
           implementation.loadFile(file.getParent(), file.getName())
-          implementation
         } catch {
           case e: Throwable =>
             log.error("Failed to load config file '%s'".format(file.getAbsolutePath()), e)
