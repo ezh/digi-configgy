@@ -13,10 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.jsuereth.sbtsite.SiteKeys
-
-site.settings
-
 name := "DigiConfiggy"
 
 description := "Digi Configgy is a library for handling configurations"
