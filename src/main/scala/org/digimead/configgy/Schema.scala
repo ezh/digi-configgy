@@ -1,7 +1,7 @@
 /**
  * Digi Configgy is a library for handling configurations
  *
- * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -34,7 +34,7 @@ object Schema {
   def clear(): Unit = entry.clear
   def dump(): String = {
     val buffer = new StringBuilder
-    val header = "path[is required, is exists] - description by origin"
+    val header = "path[is required, type, is exists] - description by origin"
     buffer.append("".padTo(header.length(), "-").mkString + "\n")
     buffer.append(header + "\n")
     buffer.append("".padTo(header.length(), "-").mkString + "\n")
@@ -42,18 +42,18 @@ object Schema {
       case (path, entry) =>
         val isRequired = if (entry.required) "required" else "optional"
         val isExists = if (entry.exists) "exists" else "not exists"
-        buffer.append("%s[%s, %s] - %s by %s\n".format(path, isRequired, isExists, entry.description, entry.origin))
+        buffer.append("%s[%s, %s, %s] - %s by %s\n".format(path, isRequired, entry.kind, isExists, entry.description, entry.origin))
     }
     buffer.result
   }
   def entries(): Seq[Node[_]] = entry.values.toSeq
-  def optional[T](optionPath: String*)(description: String)(implicit log: Logger, m: Manifest[T]): Node[T] = {
-    val node = new Node[T](optionPath.toSeq, description, log.getName(), false)
+  def optional[T](optionPath: String*)(description: String, default: => Option[T] = None)(implicit log: Logger, m: Manifest[T]): Node[T] = {
+    val node = new Node[T](optionPath.toList, description, log.getName(), false)(() => default)
     entry(optionPath.mkString(".")) = node
     node
   }
-  def required[T](optionPath: String*)(description: String)(implicit log: Logger, m: Manifest[T]): Node[T] = {
-    val node = new Node[T](optionPath.toSeq, description, log.getName(), true)
+  def required[T](optionPath: String*)(description: String, default: => Option[T] = None)(implicit log: Logger, m: Manifest[T]): Node[T] = {
+    val node = new Node[T](optionPath.toSeq, description, log.getName(), true)(() => default)
     entry(optionPath.mkString(".")) = node
     node
   }
@@ -73,18 +73,18 @@ object Schema {
   }.toSeq.sortBy(_._1).filterNot(_._2.exists).map(_._2)
 
   case class Node[T](val nodePath: Seq[String], val description: String,
-    val origin: String, val required: Boolean)(implicit m: Manifest[T]) {
+    val origin: String, val required: Boolean)(val default: () => Option[T])(implicit m: Manifest[T]) {
     if (nodePath.isEmpty) throw new IllegalArgumentException("Please provide key path for configgy value")
-    m match {
-      case Node.StringManifest =>
-      case Node.BooleanManifest =>
-      case Node.DoubleManifest =>
-      case Node.IntManifest =>
-      case Node.SeqStringManifest =>
-      case Node.LongManifest =>
+    val kind = (m match {
+      case Node.StringManifest => m.runtimeClass.getName()
+      case Node.BooleanManifest => m.runtimeClass.getName()
+      case Node.DoubleManifest => m.runtimeClass.getName()
+      case Node.IntManifest => m.runtimeClass.getName()
+      case Node.SeqStringManifest => m.runtimeClass.getName()
+      case Node.LongManifest => m.runtimeClass.getName()
       case unexpected =>
-        throw new IllegalArgumentException("Unexpected Configgy value type " + m.erasure)
-    }
+        throw new IllegalArgumentException("Unexpected Configgy value type " + m.runtimeClass)
+    }).split("""\.""").last
     protected lazy val configMapGetter = getConfigMapByPath(nodePath.dropRight(1), () => Some(Configgy))
     protected lazy val configMapSetter = getOrCreateConfigMapByPath(nodePath.dropRight(1), () => Configgy)
     protected lazy val nodeKey = nodePath.last
@@ -110,12 +110,26 @@ object Schema {
     protected lazy val nodeRemove: () => Boolean = () => configMapGetter().map(_.remove(nodePath.last)).getOrElse(false)
     log.debug("register node %s[%s] by %s".format(nodePath.mkString("."), (if (required) "required" else "optional"), origin))
 
-    def apply() = nodeGetter()
+    def apply() = nodeGetter() orElse {
+      default() match {
+        case result @ Some(value) =>
+          set(value)
+          result
+        case None => None
+      }
+    }
     def getConfigMap() = configMapGetter()
     def configMap() = configMapSetter()
     def key() = nodeKey
     def getName() = nodePath.mkString(".")
-    def get(): Option[T] = nodeGetter()
+    def get(): Option[T] = nodeGetter() orElse {
+      default() match {
+        case result @ Some(value) =>
+          set(value)
+          result
+        case None => None
+      }
+    }
     def getOrElse(default: T): T =
       get getOrElse { set(default); default }
     def set(arg: T) = nodeSetter(arg)

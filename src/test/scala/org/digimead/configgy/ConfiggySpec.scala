@@ -2,7 +2,7 @@
  * Digi Configgy is a library for handling configurations
  *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
- * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -23,6 +23,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 import org.digimead.configgy.Configgy.getImplementation
+import org.digimead.digi.lib.DependencyInjection
 import org.digimead.digi.lib.log.Logging
 import org.digimead.digi.lib.log.logger.RichLogger.rich2slf4j
 import org.digimead.lib.test.TestHelperLogging
@@ -33,17 +34,19 @@ import org.scalatest.matchers.ShouldMatchers
 
 class ConfiggySpec extends FunSpec with ShouldMatchers with BeforeAndAfter with TestHelperLogging with TestHelperStorage {
   type FixtureParam = Map[String, Any]
-  val log = Logging.commonLogger
-  implicit val timeout = 5000L
 
   override def withFixture(test: OneArgTest) {
+    DependencyInjection.get.foreach(_ => DependencyInjection.clear)
+    DependencyInjection.set(defaultConfig(test.configMap), { Logging })
     withLogging(test.configMap) {
       Configgy
       test(test.configMap)
     }
   }
 
-  before { Logging.reset() }
+  before {
+    //Logging.reset()
+  }
 
   describe("A Configgy") {
     it("should load a simple config file") {
@@ -77,8 +80,8 @@ class ConfiggySpec extends FunSpec with ShouldMatchers with BeforeAndAfter with 
               "    age = 23002\n" +
               "</robot>\n" +
               "<unchanged>\n" +
-              "    stuff = 0\n"
-          "</unchanged>\n"
+              "    stuff = 0\n" +
+              "</unchanged>\n"
           writeConfigFile(folder, "test.conf", data1)
 
           Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
@@ -97,8 +100,8 @@ class ConfiggySpec extends FunSpec with ShouldMatchers with BeforeAndAfter with 
               "    age = 23003\n" +
               "</robot>\n" +
               "<unchanged>\n" +
-              "    stuff = 0\n"
-          "</unchanged>\n"
+              "    stuff = 0\n" +
+              "</unchanged>\n"
           writeConfigFile(folder, "test.conf", data2)
 
           Configgy.reload
@@ -119,9 +122,9 @@ class ConfiggySpec extends FunSpec with ShouldMatchers with BeforeAndAfter with 
               "    name=\"Nibbler\"\n" +
               "    age = 23002\n" +
               "    nested {\n" +
-              "        thing = 5\n"
-          "    }\n" +
-            "</robot>\n"
+              "        thing = 5\n" +
+              "    }\n" +
+              "</robot>\n"
           writeConfigFile(folder, "test.conf", data1)
 
           Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))

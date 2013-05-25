@@ -1,7 +1,7 @@
 /**
  * Digi Configgy is a library for handling configurations
  *
- * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -19,7 +19,9 @@
 package org.digimead.configgy
 
 import org.digimead.configgy.Configgy.getImplementation
+import org.digimead.digi.lib.DependencyInjection
 import org.digimead.digi.lib.log.Logging
+import org.digimead.digi.lib.log.Logging.Logging2implementation
 import org.digimead.digi.lib.log.logger.RichLogger.rich2slf4j
 import org.digimead.lib.test.TestHelperLogging
 import org.scalatest.BeforeAndAfter
@@ -29,37 +31,36 @@ import org.slf4j.Logger
 
 class SchemaSpec extends FunSpec with ShouldMatchers with BeforeAndAfter with TestHelperLogging {
   type FixtureParam = Map[String, Any]
-  implicit val log: Logger = Logging.commonLogger
+  implicit lazy val schemaLog: Logger = log
 
   override def withFixture(test: OneArgTest) {
+    DependencyInjection.get.foreach(_ => DependencyInjection.clear)
+    DependencyInjection.set(defaultConfig(test.configMap), { Logging })
     withLogging(test.configMap) {
+      Schema.clear
+      Configgy.clear
       test(test.configMap)
     }
-  }
-
-  before {
-    Schema.clear
-    Configgy.clear
   }
 
   describe("A Schema") {
     it("should assign optional element") {
       config =>
-        val schemaEntity = Schema.Node[String](Seq("optional"), "some useless key", log.getName(), false)
+        val schemaEntity = Schema.Node[String](List("optional"), "some useless key", log.getName(), false)(() => None)
         val entity = Schema.optional[String]("optional")("some useless key")
         Schema.entries.exists(_ == schemaEntity) should be(true)
         entity should be(schemaEntity)
     }
     it("should assign required element") {
       config =>
-        val schemaEntity = Schema.Node[String](Seq("required"), "very important key", log.getName(), true)
+        val schemaEntity = Schema.Node[String](Seq("required"), "very important key", log.getName(), true)(() => None)
         val entity = Schema.required[String]("required")("very important key")
         Schema.entries.exists(_ == schemaEntity) should be(true)
         entity should be(schemaEntity)
     }
     it("should check input arguments") {
       config =>
-        val thrown1 = evaluating { Schema.Node[String](Seq(), "some useless key", log.getName(), false) } should produce[IllegalArgumentException]
+        val thrown1 = evaluating { Schema.Node[String](Seq(), "some useless key", log.getName(), false)(() => None) } should produce[IllegalArgumentException]
         thrown1.getMessage should equal("Please provide key path for configgy value")
         val thrown2 = evaluating { Schema.required[Float]("required")("very important key") } should produce[IllegalArgumentException]
         thrown2.getMessage should equal("Unexpected Configgy value type float")
@@ -70,7 +71,7 @@ class SchemaSpec extends FunSpec with ShouldMatchers with BeforeAndAfter with Te
         val result = Schema.dump
         log.debug(result)
         result.split("\n") should have size (4)
-        result should include("test[required, not exists] - test key by @~*~*~*~*")
+        result should include("test[required, String, not exists] - test key by @configgy.SchemaSpec")
     }
     it("should clear") {
       config =>
@@ -173,8 +174,19 @@ class SchemaSpec extends FunSpec with ShouldMatchers with BeforeAndAfter with Te
       val result = Schema.dump
       log.debug(result)
       result.split("\n") should have size (4)
-      result should include("test[required, not exists] - test key by @~*~*~*~*")
+      result should include("test[required, String, not exists] - test key by @configgy.SchemaSpec")
       e := "ABC"
-      Schema.dump should include("test[required, exists] - test key by @~*~*~*~*")
+      Schema.dump should include("test[required, String, exists] - test key by @configgy.SchemaSpec")
+  }
+  describe("default argument") {
+    it("should be lazy") {
+      config =>
+        var touch = ""
+        val e = Schema.required[String]("test")("test key", { touch = "yes"; Some(touch) })
+        assert(touch === "")
+        assert(e.get === Some("yes"))
+        assert(touch === "yes")
+        assert(Configgy("test") === "yes")
+    }
   }
 }

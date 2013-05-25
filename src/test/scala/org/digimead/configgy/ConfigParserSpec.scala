@@ -2,7 +2,7 @@
  * Digi Configgy is a library for handling configurations
  *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
- * Copyright 2012 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -20,6 +20,7 @@
 package org.digimead.configgy
 
 import org.digimead.configgy.extensions.stringToConfiggyString
+import org.digimead.digi.lib.DependencyInjection
 import org.digimead.digi.lib.log.Logging
 import org.digimead.lib.test.TestHelperLogging
 import org.digimead.lib.test.TestHelperStorage
@@ -27,19 +28,17 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.fixture.FunSpec
 import org.scalatest.matchers.ShouldMatchers
 
-class ConfigParserSpec extends FunSpec with ShouldMatchers with BeforeAndAfter with TestHelperLogging with TestHelperStorage {
+class ConfigParserSpec extends FunSpec with ShouldMatchers with TestHelperLogging with TestHelperStorage {
   type FixtureParam = Map[String, Any]
-  val log = Logging.commonLogger
-  implicit val timeout = 5000L
 
   override def withFixture(test: OneArgTest) {
+    DependencyInjection.get.foreach(_ => DependencyInjection.clear)
+    DependencyInjection.set(defaultConfig(test.configMap), { Logging })
     withLogging(test.configMap) {
       Configgy
       test(test.configMap)
     }
   }
-
-  before { Logging.reset() }
 
   class FakeImporter extends Importer {
     def importFile(filename: String, required: Boolean): String = {

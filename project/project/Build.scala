@@ -1,8 +1,8 @@
 import sbt._
 object PluginDef extends Build {
   override def projects = Seq(root)
-  lazy val root = Project("plugins", file(".")) dependsOn(ghpages,ssa)
-  lazy val ghpages = uri("git://github.com/jsuereth/xsbt-ghpages-plugin.git")
-  lazy val ssa = uri("git://github.com/sbt-android-mill/sbt-source-align.git#0.2")
-  //lazy val pamflet = uri("git://github.com/n8han/pamflet-plugin.git#0.4.1")
+  lazy val root = Project("plugins", file(".")) dependsOn(osgi, scct, coveralls)
+  lazy val scct = uri("git://github.com/ezh/sbt-scct.git#dbda90348a260995dea29eee97d03457742a8a67")
+  lazy val coveralls = uri("git://github.com/ezh/xsbt-coveralls-plugin#06203a39718281282c02352f0f40bc713c4ab50a")
+  lazy val osgi = uri("git://github.com/digimead/sbt-osgi-manager.git#develop")
 }
