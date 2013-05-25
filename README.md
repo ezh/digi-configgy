@@ -1,4 +1,4 @@
-Digi-Configgy
+Digi-Configgy [![Build Status](https://travis-ci.org/ezh/digi-configgy.png?branch=master)](https://travis-ci.org/ezh/digi-configgy) [![Coverage Status](https://coveralls.io/repos/ezh/digi-configgy/badge.png?branch=master)](https://coveralls.io/r/ezh/digi-configgy?branch=master)
 =============
 
 __A library for handling configurations__
@@ -13,15 +13,21 @@ Original Configgy library was deprecated by [Ostrich](https://github.com/twitter
 
 ### Setup
 
-```scala
-libraryDependencies += Seq(
-  "org.digimead" %% "digiconfiggy" % "2.1"
-)
+Add Maven or Ivy repository:
 
-resolvers += "digiconfiggy" at "http://ezh.github.com/configgy/releases"
+```scala
+resolvers += "digimead-maven" at "http://storage.googleapis.com/maven.repository.digimead.org/"
 ```
 
-Download jar files directly from the [GitHub](https://github.com/ezh/configgy/tree/release-2.0/publish/releases/org/digimead)
+```scala
+resolvers += Resolver.url("digimead-ivy", url("http://storage.googleapis.com/ivy.repository.digimead.org/"))(Resolver.defaultIvyPatterns)
+```
+
+Add dependency:
+
+```scala
+libraryDependencies += "org.digimead" %% "digiconfiggy" % "VERSION"
+```
 
 ## Target platform
 
