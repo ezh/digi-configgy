@@ -24,129 +24,117 @@ import java.io.FileOutputStream
 
 import org.digimead.configgy.Configgy.getImplementation
 import org.digimead.digi.lib.DependencyInjection
-import org.digimead.digi.lib.log.Logging
-import org.digimead.digi.lib.log.logger.RichLogger.rich2slf4j
-import org.digimead.lib.test.TestHelperLogging
-import org.digimead.lib.test.TestHelperStorage
-import org.scalatest.BeforeAndAfter
-import org.scalatest.fixture.FunSpec
+import org.digimead.digi.lib.log.api.Loggable
+import org.digimead.lib.test.LoggingHelper
+import org.digimead.lib.test.StorageHelper
+import org.scalatest.FunSpec
 import org.scalatest.matchers.ShouldMatchers
 
-class ConfiggySpec extends FunSpec with ShouldMatchers with BeforeAndAfter with TestHelperLogging with TestHelperStorage {
-  type FixtureParam = Map[String, Any]
-
-  override def withFixture(test: OneArgTest) {
-    DependencyInjection.get.foreach(_ => DependencyInjection.clear)
-    DependencyInjection.set(defaultConfig(test.configMap), { Logging })
-    withLogging(test.configMap) {
-      Configgy
-      test(test.configMap)
-    }
-  }
-
+class ConfiggySpec extends FunSpec with ShouldMatchers with StorageHelper with LoggingHelper with Loggable {
+  after { adjustLoggingAfter }
   before {
-    //Logging.reset()
+    DependencyInjection(org.digimead.digi.lib.default, false)
+    adjustLoggingBefore
+    Schema.clear
+    Configgy.clear
   }
 
   describe("A Configgy") {
     it("should load a simple config file") {
-      config =>
-        withTempFolder {
-          folder =>
-            val data1 =
-              "name=\"Nibbler\"\n" +
-                "\n" +
-                "<log>\n" +
-                "    filename=\"" + folder + "/test.log\"\n" +
-                "    level=\"WARNING\"\n" +
-                "</log>\n"
-            writeConfigFile(folder, "test.conf", data1)
+      withTempFolder {
+        folder =>
+          val data1 =
+            "name=\"Nibbler\"\n" +
+              "\n" +
+              "<log>\n" +
+              "    filename=\"" + folder + "/test.log\"\n" +
+              "    level=\"WARNING\"\n" +
+              "</log>\n"
+          writeConfigFile(folder, "test.conf", data1)
 
-            Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
+          Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
 
-            // verify the config file got loaded:
-            Configgy.apply("name") should be("Nibbler")
-        }
+          // verify the config file got loaded:
+          Configgy.apply("name") should be("Nibbler")
+      }
     }
   }
 
   it("should reload") {
-    config =>
-      withTempFolder {
-        folder =>
-          val data1 =
-            "<robot>\n" +
-              "    name=\"Nibbler\"\n" +
-              "    age = 23002\n" +
-              "</robot>\n" +
-              "<unchanged>\n" +
-              "    stuff = 0\n" +
-              "</unchanged>\n"
-          writeConfigFile(folder, "test.conf", data1)
+    withTempFolder {
+      folder =>
+        val data1 =
+          "<robot>\n" +
+            "    name=\"Nibbler\"\n" +
+            "    age = 23002\n" +
+            "</robot>\n" +
+            "<unchanged>\n" +
+            "    stuff = 0\n" +
+            "</unchanged>\n"
+        writeConfigFile(folder, "test.conf", data1)
 
-          Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
+        Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
 
-          Configgy.getInt("robot.age", 0) should be(23002)
+        Configgy.getInt("robot.age", 0) should be(23002)
 
-          var checked = false
-          var checkedAlso = false
-          Configgy.subscribe("robot") { (attr: Option[ConfigMap]) => checked = true }
-          Configgy.subscribe("unchanged") { (attr: Option[ConfigMap]) => checkedAlso = true }
-          checked should be(false)
+        var checked = false
+        var checkedAlso = false
+        Configgy.subscribe("robot") { (attr: Option[ConfigMap]) => checked = true }
+        Configgy.subscribe("unchanged") { (attr: Option[ConfigMap]) => checkedAlso = true }
+        checked should be(false)
 
-          val data2 =
-            "<robot>\n" +
-              "    name=\"Nibbler\"\n" +
-              "    age = 23003\n" +
-              "</robot>\n" +
-              "<unchanged>\n" +
-              "    stuff = 0\n" +
-              "</unchanged>\n"
-          writeConfigFile(folder, "test.conf", data2)
+        val data2 =
+          "<robot>\n" +
+            "    name=\"Nibbler\"\n" +
+            "    age = 23003\n" +
+            "</robot>\n" +
+            "<unchanged>\n" +
+            "    stuff = 0\n" +
+            "</unchanged>\n"
+        writeConfigFile(folder, "test.conf", data2)
 
-          Configgy.reload
+        Configgy.reload
 
-          // all subscribers (even for unchanged nodes) should be called.
-          checked should be(true)
-          checkedAlso should be(true)
-          Configgy.getInt("robot.age", 0) should be(23003)
-      }
+        // all subscribers (even for unchanged nodes) should be called.
+        checked should be(true)
+        checkedAlso should be(true)
+        Configgy.getInt("robot.age", 0) should be(23003)
+    }
   }
 
   it("should change a nested value without invalidating ConfigMap references") {
-    config =>
-      withTempFolder {
-        folder =>
-          val data1 =
-            "<robot>\n" +
-              "    name=\"Nibbler\"\n" +
-              "    age = 23002\n" +
-              "    nested {\n" +
-              "        thing = 5\n" +
-              "    }\n" +
-              "</robot>\n"
-          writeConfigFile(folder, "test.conf", data1)
+    withTempFolder {
+      folder =>
+        val data1 =
+          "<robot>\n" +
+            "    name=\"Nibbler\"\n" +
+            "    age = 23002\n" +
+            "    nested {\n" +
+            "        thing = 5\n" +
+            "    }\n" +
+            "</robot>\n"
+        writeConfigFile(folder, "test.conf", data1)
 
-          Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
+        Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
 
-          val robot = Configgy.configMap("robot")
-          robot.getString("name") should be(Some("Nibbler"))
-          robot.setString("name", "Bender")
-          robot.getString("name") should be(Some("Bender"))
-          val nested = Configgy.configMap("robot.nested")
-          nested("thing") should be("5")
-          robot("age") should be("23002")
+        val robot = Configgy.configMap("robot")
+        robot.getString("name") should be(Some("Nibbler"))
+        robot.setString("name", "Bender")
+        robot.getString("name") should be(Some("Bender"))
+        val nested = Configgy.configMap("robot.nested")
+        nested("thing") should be("5")
+        robot("age") should be("23002")
 
-          val data2 =
-            "<robot>\n" +
-              "    name=\"Nibbler\"\n" +
-              "    age = 23004\n" +
-              "</robot>\n"
-          writeConfigFile(folder, "test.conf", data2)
-          Configgy.reload
-          nested.dump should be("{robot.nested: }")
-          robot("age") should be("23004")
-      }
+        val data2 =
+          "<robot>\n" +
+            "    name=\"Nibbler\"\n" +
+            "    age = 23004\n" +
+            "</robot>\n"
+        writeConfigFile(folder, "test.conf", data2)
+        Configgy.reload
+        nested.dump should be("{robot.nested: }")
+        robot("age") should be("23004")
+    }
   }
 
   private def writeConfigFile(folder: File, filename: String, data: String) = {
@@ -155,4 +143,6 @@ class ConfiggySpec extends FunSpec with ShouldMatchers with BeforeAndAfter with 
     f.write(data.getBytes)
     f.close
   }
+
+  override def beforeAll(configMap: Map[String, Any]) { adjustLoggingBeforeAll(configMap) }
 }

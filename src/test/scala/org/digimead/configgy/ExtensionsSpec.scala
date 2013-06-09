@@ -19,55 +19,51 @@
 
 package org.digimead.configgy
 
+import org.digimead.configgy.Configgy.getImplementation
 import org.digimead.configgy.extensions.byteArrayToConfiggyByteArray
 import org.digimead.configgy.extensions.stringToConfiggyString
 import org.digimead.digi.lib.DependencyInjection
-import org.digimead.digi.lib.log.Logging
-import org.digimead.lib.test.TestHelperLogging
-import org.scalatest.fixture.FunSpec
+import org.digimead.digi.lib.log.api.Loggable
+import org.digimead.lib.test.LoggingHelper
+import org.scalatest.FunSpec
 import org.scalatest.matchers.ShouldMatchers
 
-class ExtensionsSpecextends extends FunSpec with ShouldMatchers with TestHelperLogging {
-  type FixtureParam = Map[String, Any]
-
-  override def withFixture(test: OneArgTest) {
-    DependencyInjection.get.foreach(_ => DependencyInjection.clear)
-    DependencyInjection.set(defaultConfig(test.configMap), { Logging })
-    withLogging(test.configMap) {
-      Configgy
-      test(test.configMap)
-    }
+class ExtensionsSpecextends extends FunSpec with ShouldMatchers with LoggingHelper with Loggable {
+  after { adjustLoggingAfter }
+  before {
+    DependencyInjection(org.digimead.digi.lib.default, false)
+    adjustLoggingBefore
+    Schema.clear
+    Configgy.clear
   }
 
   describe("An extensions") {
     it("quoteC") {
-      config =>
-        "nothing".quoteC should be("nothing")
-        "name\tvalue\t\u20acb\u00fcllet?\u20ac".quoteC should be("name\\tvalue\\t\\u20acb\\xfcllet?\\u20ac")
-        "she said \"hello\"".quoteC should be("she said \\\"hello\\\"")
-        "\\backslash".quoteC should be("\\\\backslash")
+      "nothing".quoteC should be("nothing")
+      "name\tvalue\t\u20acb\u00fcllet?\u20ac".quoteC should be("name\\tvalue\\t\\u20acb\\xfcllet?\\u20ac")
+      "she said \"hello\"".quoteC should be("she said \\\"hello\\\"")
+      "\\backslash".quoteC should be("\\\\backslash")
     }
 
     it("unquoteC") {
-      config =>
-        "nothing".unquoteC should be("nothing")
-        "name\\tvalue\\t\\u20acb\\xfcllet?\\u20ac".unquoteC should be("name\tvalue\t\u20acb\u00fcllet?\u20ac")
-        "she said \\\"hello\\\"".unquoteC should be("she said \"hello\"")
-        "\\\\backslash".unquoteC should be("\\backslash")
-        "real\\$dollar".unquoteC should be("real\\$dollar")
-        "silly\\/quote".unquoteC should be("silly/quote")
+      "nothing".unquoteC should be("nothing")
+      "name\\tvalue\\t\\u20acb\\xfcllet?\\u20ac".unquoteC should be("name\tvalue\t\u20acb\u00fcllet?\u20ac")
+      "she said \\\"hello\\\"".unquoteC should be("she said \"hello\"")
+      "\\\\backslash".unquoteC should be("\\backslash")
+      "real\\$dollar".unquoteC should be("real\\$dollar")
+      "silly\\/quote".unquoteC should be("silly/quote")
     }
 
     it("hexlify") {
-      config =>
-        "hello".getBytes.slice(1, 4).hexlify should be("656c6c")
-        "hello".getBytes.hexlify should be("68656c6c6f")
+      "hello".getBytes.slice(1, 4).hexlify should be("656c6c")
+      "hello".getBytes.hexlify should be("68656c6c6f")
     }
 
     it("unhexlify") {
-      config =>
-        "656c6c".unhexlify.toList should be("hello".getBytes.slice(1, 4).toList)
-        "68656c6c6f".unhexlify.toList should be("hello".getBytes.toList)
+      "656c6c".unhexlify.toList should be("hello".getBytes.slice(1, 4).toList)
+      "68656c6c6f".unhexlify.toList should be("hello".getBytes.toList)
     }
   }
+
+  override def beforeAll(configMap: Map[String, Any]) { adjustLoggingBeforeAll(configMap) }
 }

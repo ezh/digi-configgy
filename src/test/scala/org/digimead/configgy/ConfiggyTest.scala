@@ -21,57 +21,69 @@ package org.digimead.configgy
 import java.io.File
 import java.io.FileOutputStream
 
+import scala.collection.JavaConversions._
+
+import org.digimead.configgy.Configgy.getImplementation
 import org.digimead.digi.lib.DependencyInjection
-import org.digimead.digi.lib.log.Logging
-import org.digimead.digi.lib.log.logger.RichLogger.rich2slf4j
-import org.digimead.lib.test.TestHelperLogging
-import org.digimead.lib.test.TestHelperStorage
-import org.scalatest.BeforeAndAfter
-import org.scalatest.fixture.FunSuite
+import org.digimead.digi.lib.log.api.Loggable
+import org.digimead.lib.test.LoggingHelper
+import org.digimead.lib.test.StorageHelper
+import org.mockito.Mockito
+import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 
-class ConfiggyTest extends FunSuite with ShouldMatchers with TestHelperLogging with TestHelperStorage {
-  type FixtureParam = Map[String, Any]
+class ConfiggyTest extends FunSuite with ShouldMatchers with StorageHelper with LoggingHelper with Loggable {
   implicit val timeout = 5000L
 
-  override def withFixture(test: OneArgTest) {
-    DependencyInjection.get.foreach(_ => DependencyInjection.clear)
-    DependencyInjection.set(defaultConfig(test.configMap), { Logging })
-    withLogging(test.configMap) {
-      Configgy
-      test(test.configMap)
-    }
+  after { adjustLoggingAfter }
+  before {
+    DependencyInjection(org.digimead.digi.lib.default, false)
+    adjustLoggingBefore
+    Schema.clear
+    Configgy.clear
   }
 
   test("test Configgy initialization with DefaultInit") {
-    config =>
-      Configgy.setup(new Configgy.DefaultInit)
-      Configgy.getImplementation().isInstanceOf[Configgy.Interface] should be(true)
-      Configgy.getImplementation() should not be (null)
-      assertLog(_ startsWith _, "dispose ")
-      assertLog(_ == _, "initialize Configgy$ with default Configgy implementation")
-      assertLog(_ == _, "initialize default Configgy implementation")
+    implicit val option = Mockito.times(3)
+    withLogCaptor { Configgy.setup(new Configgy.DefaultInit) } { logCaptor =>
+      val _1st = logCaptor.getAllValues()(0)
+      _1st.getLevel() should be(org.apache.log4j.Level.DEBUG)
+      _1st.getMessage.toString should startWith("dispose ")
+      val _2nd = logCaptor.getAllValues()(1)
+      _2nd.getLevel() should be(org.apache.log4j.Level.DEBUG)
+      _2nd.getMessage.toString should be("initialize Configgy$ with default Configgy implementation")
+      val _3rd = logCaptor.getAllValues()(2)
+      _3rd.getLevel() should be(org.apache.log4j.Level.DEBUG)
+      _3rd.getMessage.toString should be("initialize default Configgy implementation")
+    }
+    Configgy.getImplementation().isInstanceOf[Configgy.Interface] should be(true)
+    Configgy.getImplementation() should not be (null)
   }
 
   test("test Configgy initialization with DefaultInitFromFile") {
-    config =>
-      withTempFolder {
-        folder =>
-          val data1 =
-            "name=\"Nibbler\"\n" +
-              "\n" +
-              "<log>\n" +
-              "    filename=\"" + folder + "/test.log\"\n" +
-              "    level=\"WARNING\"\n" +
-              "</log>\n"
-          writeConfigFile(folder, "test.conf", data1)
-          Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf"))
-          Configgy.getImplementation().isInstanceOf[Configgy.Interface] should be(true)
-          Configgy.getImplementation() should not be (null)
-          assertLog(_ startsWith _, "dispose ")
-          assertLog(_ == _, "initialize Configgy$ with default ConfiggyFromFile implementation")
-          assertLog(_ == _, "initialize default ConfiggyFromFile implementation")
-      }
+    withTempFolder {
+      folder =>
+        val data1 =
+          "name=\"Nibbler\"\n" +
+            "\n" +
+            "<log>\n" +
+            "    filename=\"" + folder + "/test.log\"\n" +
+            "    level=\"WARNING\"\n" +
+            "</log>\n"
+        writeConfigFile(folder, "test.conf", data1)
+        implicit val option = Mockito.times(4)
+        withLogCaptor { Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf")) } { logCaptor =>
+          val _1st = logCaptor.getAllValues()(0)
+          _1st.getLevel() should be(org.apache.log4j.Level.DEBUG)
+          _1st.getMessage.toString should startWith("dispose ")
+          val _2nd = logCaptor.getAllValues()(1)
+          _2nd.getLevel() should be(org.apache.log4j.Level.DEBUG)
+          _2nd.getMessage.toString should be("initialize Configgy$ with default ConfiggyFromFile implementation")
+          val _3rd = logCaptor.getAllValues()(2)
+          _3rd.getLevel() should be(org.apache.log4j.Level.DEBUG)
+          _3rd.getMessage.toString should be("initialize default ConfiggyFromFile implementation")
+        }
+    }
   }
 
   private def writeConfigFile(folder: File, filename: String, data: String) = {
@@ -80,4 +92,6 @@ class ConfiggyTest extends FunSuite with ShouldMatchers with TestHelperLogging w
     f.write(data.getBytes)
     f.close
   }
+
+  override def beforeAll(configMap: Map[String, Any]) { adjustLoggingBeforeAll(configMap) }
 }

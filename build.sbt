@@ -17,7 +17,7 @@
 
 import sbt.osgi.manager._
 
-activateOSGiManager ++ sbt.scct.ScctPlugin.instrumentSettings
+OSGiManager ++ sbt.scct.ScctPlugin.instrumentSettings
 
 name := "DigiConfiggy"
 
@@ -29,7 +29,7 @@ organization := "org.digimead"
 
 organizationHomepage := Some(url("http://digimead.org"))
 
-homepage := Some(url("https://github.com/ezh/digi-lib-util"))
+homepage := Some(url("https://github.com/ezh/digi-configgy"))
 
 version <<= (baseDirectory) { (b) => scala.io.Source.fromFile(b / "version").mkString.trim }
 
@@ -39,7 +39,7 @@ inConfig(OSGiConf)({
     osgiBndBundleSymbolicName := "org.digimead.configgy",
     osgiBndBundleCopyright := "Copyright © 2009-2010 Robey Pointer, 2012-2013 Alexey B. Aksenov/Ezh. All rights reserved.",
     osgiBndExportPackage := List("org.digimead.*"),
-    osgiBndImportPackage := List("!org.aspectj.lang", "*"),
+    osgiBndImportPackage := List("!org.aspectj.*", "*"),
     osgiBndBundleLicense := "http://www.apache.org/licenses/LICENSE-2.0.txt;description=The Apache Software License, Version 2.0"
   )
 })
@@ -58,29 +58,22 @@ if (sys.env.contains("XBOOTCLASSPATH")) Seq(javacOptions += "-Xbootclasspath:" +
 
 resolvers += "digimead-maven" at "http://storage.googleapis.com/maven.repository.digimead.org/"
 
-moduleConfigurations := {
-  val digi = "digimead" at "http://storage.googleapis.com/maven.repository.digimead.org/"
-  Seq(
-    ModuleConfiguration("org.digimead", "digi-lib", digi),
-    ModuleConfiguration("org.digimead", "digi-lib-slf4j", digi),
-    ModuleConfiguration("org.digimead", "digi-lib-util", digi),
-    ModuleConfiguration("org.digimead", "digi-lib-test", digi)
-  )
-}
-
-libraryDependencies ++= Seq("org.slf4j" % "slf4j-api" % "1.7.5",
-  "org.digimead" %% "digi-lib" % "0.2.3" % "test",
-  "org.digimead" %% "digi-lib-util" % "0.2.3" % "test",
-  "org.digimead" %% "digi-lib-slf4j" % "0.2.2" % "test",
-  "org.digimead" %% "digi-lib-test" % "0.2.2" % "test",
-  "org.scalatest" %% "scalatest" % "1.9.1" % "test"
-     excludeAll(ExclusionRule("org.scala-lang", "scala-reflect"), ExclusionRule("org.scala-lang", "scala-actors"))
+libraryDependencies ++= Seq(
+  "org.slf4j" % "slf4j-api" % "1.7.5",
+  "org.digimead" %% "digi-lib" % "0.2.3.1" % "test",
+  "org.digimead" %% "digi-lib-test" % "0.2.2.1" % "test"
 )
- 
+
+//
+// Testing
+//
+
 parallelExecution in Test := false
 
 parallelExecution in sbt.scct.ScctPlugin.ScctTest := false
 
-//sourceDirectory in Test <<= baseDirectory / "Testing Infrastructure Is Absent"
+testOptions in Test += Tests.Argument("-l", "org.digimead.configgy.tags.Optional")
+
+testOptions in sbt.scct.ScctPlugin.ScctTest += Tests.Argument("-l", "org.digimead.configgy.tags.Optional")
 
 //logLevel := Level.Debug
