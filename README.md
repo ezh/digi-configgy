@@ -31,7 +31,7 @@ libraryDependencies += "org.digimead" %% "digiconfiggy" % "VERSION"
 
 ## Target platform
 
-* Scala 2.10.1 (request for more if needed)
+* Scala 2.10.2 (request for more if needed)
 * JVM 1.6+
 * The only 3rd-party library dependency is [SLF4J](http://www.slf4j.org/)
 

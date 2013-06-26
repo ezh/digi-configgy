@@ -17,7 +17,7 @@
 
 import sbt.osgi.manager._
 
-OSGiManager ++ sbt.scct.ScctPlugin.instrumentSettings
+OSGiManager // ++ sbt.scct.ScctPlugin.instrumentSettings
 
 name := "DigiConfiggy"
 
@@ -44,9 +44,9 @@ inConfig(OSGiConf)({
   )
 })
 
-crossScalaVersions := Seq("2.10.1")
+crossScalaVersions := Seq("2.10.2")
 
-scalaVersion := "2.10.1"
+scalaVersion := "2.10.2"
 
 scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-unchecked", "-Xcheckinit", "-feature") ++
   (if (true || (System getProperty "java.runtime.version" startsWith "1.7")) Seq() else Seq("-optimize")) // -optimize fails with jdk7
@@ -60,8 +60,8 @@ resolvers += "digimead-maven" at "http://storage.googleapis.com/maven.repository
 
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.5",
-  "org.digimead" %% "digi-lib" % "0.2.3.1" % "test",
-  "org.digimead" %% "digi-lib-test" % "0.2.2.1" % "test"
+  "org.digimead" %% "digi-lib" % "0.2.3.4-SNAPSHOT" % "test",
+  "org.digimead" %% "digi-lib-test" % "0.2.2.4-SNAPSHOT" % "test"
 )
 
 //
@@ -70,10 +70,6 @@ libraryDependencies ++= Seq(
 
 parallelExecution in Test := false
 
-parallelExecution in sbt.scct.ScctPlugin.ScctTest := false
-
 testOptions in Test += Tests.Argument("-l", "org.digimead.configgy.tags.Optional")
-
-testOptions in sbt.scct.ScctPlugin.ScctTest += Tests.Argument("-l", "org.digimead.configgy.tags.Optional")
 
 //logLevel := Level.Debug
