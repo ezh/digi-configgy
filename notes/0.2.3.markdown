@@ -1,0 +1,3 @@
+The 0.2.3 release includes the following:
+
+* Base API with guava dependency

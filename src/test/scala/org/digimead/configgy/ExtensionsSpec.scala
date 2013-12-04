@@ -26,9 +26,9 @@ import org.digimead.digi.lib.DependencyInjection
 import org.digimead.digi.lib.log.api.Loggable
 import org.digimead.lib.test.LoggingHelper
 import org.scalatest.FunSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
-class ExtensionsSpecextends extends FunSpec with ShouldMatchers with LoggingHelper with Loggable {
+class ExtensionsSpecextends extends FunSpec with Matchers with LoggingHelper with Loggable {
   after { adjustLoggingAfter }
   before {
     DependencyInjection(org.digimead.digi.lib.default, false)
@@ -65,5 +65,5 @@ class ExtensionsSpecextends extends FunSpec with ShouldMatchers with LoggingHelp
     }
   }
 
-  override def beforeAll(configMap: Map[String, Any]) { adjustLoggingBeforeAll(configMap) }
+  override def beforeAll(configMap: org.scalatest.ConfigMap) { adjustLoggingBeforeAll(configMap) }
 }

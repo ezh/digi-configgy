@@ -30,9 +30,9 @@ import org.digimead.lib.test.LoggingHelper
 import org.digimead.lib.test.StorageHelper
 import org.mockito.Mockito
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
-class ConfiggyTest extends FunSuite with ShouldMatchers with StorageHelper with LoggingHelper with Loggable {
+class ConfiggyTest extends FunSuite with Matchers with StorageHelper with LoggingHelper with Loggable {
   implicit val timeout = 5000L
 
   after { adjustLoggingAfter }
@@ -93,5 +93,5 @@ class ConfiggyTest extends FunSuite with ShouldMatchers with StorageHelper with 
     f.close
   }
 
-  override def beforeAll(configMap: Map[String, Any]) { adjustLoggingBeforeAll(configMap) }
+  override def beforeAll(configMap: org.scalatest.ConfigMap) { adjustLoggingBeforeAll(configMap) }
 }
