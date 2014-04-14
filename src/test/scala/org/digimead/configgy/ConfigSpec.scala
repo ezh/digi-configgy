@@ -31,13 +31,11 @@ import org.digimead.lib.test.StorageHelper
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
-import javax.{ management => jmx }
+import javax.{ management ⇒ jmx }
 
 class ConfigSpec extends FunSpec with Matchers with StorageHelper with LoggingHelper with Loggable {
-  after { adjustLoggingAfter }
   before {
     DependencyInjection(org.digimead.digi.lib.default, false)
-    adjustLoggingBefore
     Schema.clear
     Configgy.clear
   }
@@ -57,8 +55,8 @@ class ConfigSpec extends FunSpec with Matchers with StorageHelper with LoggingHe
     def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {
       used = true
       savedCurrent = current match {
-        case None => None
-        case Some(x) => Some(x.asInstanceOf[Attributes].copy)
+        case None ⇒ None
+        case Some(x) ⇒ Some(x.asInstanceOf[Attributes].copy)
       }
       savedReplacement = replacement
     }
@@ -78,7 +76,7 @@ class ConfigSpec extends FunSpec with Matchers with StorageHelper with LoggingHe
       c.debugSubscribers should be("subs=0 { alpha=0 { beta=0 { gamma=1 } } }")
       c.unsubscribe(id)
       c.debugSubscribers should be("subs=0 { alpha=0 { beta=0 { gamma=0 } } }")
-      id = c.subscribe("alpha.beta") { (attr: Option[ConfigMap]) => Console.println("hello") }
+      id = c.subscribe("alpha.beta") { (attr: Option[ConfigMap]) ⇒ Console.println("hello") }
       c.debugSubscribers should be("subs=0 { alpha=0 { beta=1 { gamma=0 } } }")
       c.unsubscribe(id)
       c.debugSubscribers should be("subs=0 { alpha=0 { beta=0 { gamma=0 } } }")
@@ -89,7 +87,7 @@ class ConfigSpec extends FunSpec with Matchers with StorageHelper with LoggingHe
       c("alpha.beta.gamma") = "hello"
 
       var checked = false
-      c.subscribe("alpha.beta") { (attr: Option[ConfigMap]) => checked = true }
+      c.subscribe("alpha.beta") { (attr: Option[ConfigMap]) ⇒ checked = true }
       checked should be(false)
       c("alpha.beta.delta") = "goodbye"
       checked should be(true)
@@ -120,7 +118,7 @@ class ConfigSpec extends FunSpec with Matchers with StorageHelper with LoggingHe
       c("alpha.beta.gamma") = "hello"
 
       c.subscribe("alpha.beta", new AngrySubscriber)
-      val thrown = evaluating { c("alpha.beta.gamma") = "gutentag" } should produce[ValidationException]
+      val thrown = the[ValidationException] thrownBy { c("alpha.beta.gamma") = "gutentag" }
       thrown.getMessage should equal("no way!")
       c("alpha.giraffe") = "tall!"
       c.dump should be("{: alpha={alpha: beta={alpha.beta: gamma=\"hello\" } giraffe=\"tall!\" } }")
@@ -168,7 +166,7 @@ class ConfigSpec extends FunSpec with Matchers with StorageHelper with LoggingHe
       c.getConfigMap("forest").get.dump should be(
         "{forest: fires={forest.fires: are=\"bad\" } matches=\"false\" }")
 
-      val thrown = evaluating { c.remove("forest") } should produce[ValidationException]
+      val thrown = the[ValidationException] thrownBy { c.remove("forest") }
       thrown.getMessage should equal("no way!")
 
       rootsub.used = false
@@ -182,7 +180,7 @@ class ConfigSpec extends FunSpec with Matchers with StorageHelper with LoggingHe
 
     it("should include relative files") {
       withTempFolder {
-        folder =>
+        folder ⇒
           val inner = new File(folder, "inner")
           inner.mkdir
 

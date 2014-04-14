@@ -29,10 +29,8 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
 class ConfigParserSpec extends FunSpec with Matchers with StorageHelper with LoggingHelper with Loggable {
-  after { adjustLoggingAfter }
   before {
     DependencyInjection(org.digimead.digi.lib.default, false)
-    adjustLoggingBefore
     Schema.clear
     Configgy.clear
   }
@@ -40,20 +38,20 @@ class ConfigParserSpec extends FunSpec with Matchers with StorageHelper with Log
   class FakeImporter extends Importer {
     def importFile(filename: String, required: Boolean): String = {
       filename match {
-        case "test1" =>
+        case "test1" ⇒
           "staff = \"weird skull\"\n"
-        case "test2" =>
+        case "test2" ⇒
           "<inner>\n" +
             "    cat=\"meow\"\n" +
             "    include \"test3\"\n" +
             "    dog ?= \"blah\"\n" +
             "</inner>"
-        case "test3" =>
+        case "test3" ⇒
           "dog=\"bark\"\n" +
             "cat ?= \"blah\"\n"
-        case "test4" =>
+        case "test4" ⇒
           "cow=\"moo\"\n"
-        case "test5" =>
+        case "test5" ⇒
           if (!required) "" else throw new ParseException("File not found")
       }
     }
@@ -181,7 +179,7 @@ class ConfigParserSpec extends FunSpec with Matchers with StorageHelper with Log
 
   it("should throw an exception when importing non-existent file") {
     val data1 = "include \"test5\"\n"
-    val thrown = evaluating { parse(data1) } should produce[ParseException]
+    val thrown = the[ParseException] thrownBy { parse(data1) }
     thrown.getMessage should equal("File not found")
   }
 
@@ -196,12 +194,12 @@ class ConfigParserSpec extends FunSpec with Matchers with StorageHelper with Log
         "<cat>\n" +
         "    dog = 1\n" +
         "</cat>\n"
-    val thrown = evaluating { parse(data) } should produce[ConfigException]
+    val thrown = the[ConfigException] thrownBy { parse(data) }
     thrown.getMessage should equal("Illegal key cat")
   }
 
   it("should catch unknown block modifiers") {
-    val thrown = evaluating { parse("<upp name=\"fred\">\n</upp>\n") } should produce[ParseException]
+    val thrown = the[ParseException] thrownBy { parse("<upp name=\"fred\">\n</upp>\n") }
     thrown.getMessage should equal("Unknown block modifier")
   }
 

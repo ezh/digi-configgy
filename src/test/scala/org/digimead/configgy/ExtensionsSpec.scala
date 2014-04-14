@@ -29,10 +29,8 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
 class ExtensionsSpecextends extends FunSpec with Matchers with LoggingHelper with Loggable {
-  after { adjustLoggingAfter }
   before {
     DependencyInjection(org.digimead.digi.lib.default, false)
-    adjustLoggingBefore
     Schema.clear
     Configgy.clear
   }

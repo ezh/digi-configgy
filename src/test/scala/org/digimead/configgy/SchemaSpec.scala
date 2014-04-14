@@ -26,31 +26,29 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
 class SchemaSpec extends FunSpec with Matchers with LoggingHelper with Loggable {
-  after { adjustLoggingAfter }
   before {
     DependencyInjection(org.digimead.digi.lib.default, false)
-    adjustLoggingBefore
     Schema.clear
     Configgy.clear
   }
 
   describe("A Schema") {
     it("should assign optional element") {
-      val schemaEntity = Schema.Node[String](List("optional"), "some useless key", log.getName(), false)(() => None)
+      val schemaEntity = Schema.Node[String](List("optional"), "some useless key", log.getName(), false)(() ⇒ None)
       val entity = Schema.optional[String]("optional")("some useless key")
       Schema.entries.exists(_ == schemaEntity) should be(true)
       entity should be(schemaEntity)
     }
     it("should assign required element") {
-      val schemaEntity = Schema.Node[String](Seq("required"), "very important key", log.getName(), true)(() => None)
+      val schemaEntity = Schema.Node[String](Seq("required"), "very important key", log.getName(), true)(() ⇒ None)
       val entity = Schema.required[String]("required")("very important key")
       Schema.entries.exists(_ == schemaEntity) should be(true)
       entity should be(schemaEntity)
     }
     it("should check input arguments") {
-      val thrown1 = evaluating { Schema.Node[String](Seq(), "some useless key", log.getName(), false)(() => None) } should produce[IllegalArgumentException]
+      val thrown1 = the[IllegalArgumentException] thrownBy { Schema.Node[String](Seq(), "some useless key", log.getName(), false)(() ⇒ None) }
       thrown1.getMessage should equal("Please provide key path for configgy value")
-      val thrown2 = evaluating { Schema.required[Float]("required")("very important key") } should produce[IllegalArgumentException]
+      val thrown2 = the[IllegalArgumentException] thrownBy { Schema.required[Float]("required")("very important key") }
       thrown2.getMessage should equal("Unexpected Configgy value type float")
     }
     it("should dump") {
@@ -88,14 +86,14 @@ class SchemaSpec extends FunSpec with Matchers with LoggingHelper with Loggable 
       var time = 0L
 
       time = System.currentTimeMillis
-      for (i <- 0 to 1000000)
+      for (i ← 0 to 1000000)
         Configgy("test1.test2.test3") = "test" + i
       val totalWriteOrig = System.currentTimeMillis - time
       System.err.println("original write total: " + totalWriteOrig + "ms")
       Configgy.clear
       val e = Schema.required[String]("test1", "test2", "test3")("other test key")
       time = System.currentTimeMillis
-      for (i <- 0 to 1000000)
+      for (i ← 0 to 1000000)
         e := "test" + i
       val totalWriteViaSchema = System.currentTimeMillis - time
       System.err.println("schema write total: " + totalWriteViaSchema + "ms")
@@ -143,7 +141,7 @@ class SchemaSpec extends FunSpec with Matchers with LoggingHelper with Loggable 
         e.set("123")
         Configgy("testBase.test") should be("123")
         val e2 = Schema.required[String]("testBase", "test", "other")("other test key")
-        val thrown = evaluating { e2 := "aaa" } should produce[ConfigException]
+        val thrown = the[ConfigException] thrownBy { e2 := "aaa" }
         thrown.getMessage should equal("Illegal key test")
       }
     }

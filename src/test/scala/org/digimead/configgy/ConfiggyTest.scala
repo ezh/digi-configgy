@@ -35,17 +35,15 @@ import org.scalatest.Matchers
 class ConfiggyTest extends FunSuite with Matchers with StorageHelper with LoggingHelper with Loggable {
   implicit val timeout = 5000L
 
-  after { adjustLoggingAfter }
   before {
     DependencyInjection(org.digimead.digi.lib.default, false)
-    adjustLoggingBefore
     Schema.clear
     Configgy.clear
   }
 
   test("test Configgy initialization with DefaultInit") {
     implicit val option = Mockito.times(3)
-    withLogCaptor { Configgy.setup(new Configgy.DefaultInit) } { logCaptor =>
+    withMockitoLogCaptor { Configgy.setup(new Configgy.DefaultInit) } { logCaptor =>
       val _1st = logCaptor.getAllValues()(0)
       _1st.getLevel() should be(org.apache.log4j.Level.DEBUG)
       _1st.getMessage.toString should startWith("dispose ")
@@ -72,7 +70,7 @@ class ConfiggyTest extends FunSuite with Matchers with StorageHelper with Loggin
             "</log>\n"
         writeConfigFile(folder, "test.conf", data1)
         implicit val option = Mockito.times(4)
-        withLogCaptor { Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf")) } { logCaptor =>
+        withMockitoLogCaptor { Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf")) } { logCaptor =>
           val _1st = logCaptor.getAllValues()(0)
           _1st.getLevel() should be(org.apache.log4j.Level.DEBUG)
           _1st.getMessage.toString should startWith("dispose ")
