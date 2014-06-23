@@ -2,7 +2,7 @@
  * Digi Configgy is a library for handling configurations
  *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
- * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2014 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -19,18 +19,14 @@
 
 package org.digimead.configgy
 
-import java.io.File
-import java.io.FileOutputStream
-
+import java.io.{ File, FileOutputStream }
 import org.digimead.configgy.Configgy.getImplementation
 import org.digimead.digi.lib.DependencyInjection
-import org.digimead.digi.lib.log.api.Loggable
-import org.digimead.lib.test.LoggingHelper
-import org.digimead.lib.test.StorageHelper
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.digimead.digi.lib.log.api.XLoggable
+import org.digimead.lib.test.{ LoggingHelper, StorageHelper }
+import org.scalatest.{ FunSpec, Matchers }
 
-class ConfiggySpec extends FunSpec with Matchers with StorageHelper with LoggingHelper with Loggable {
+class ConfiggySpec extends FunSpec with Matchers with StorageHelper with LoggingHelper with XLoggable {
   before {
     DependencyInjection(org.digimead.digi.lib.default, false)
     Schema.clear
@@ -40,7 +36,7 @@ class ConfiggySpec extends FunSpec with Matchers with StorageHelper with Logging
   describe("A Configgy") {
     it("should load a simple config file") {
       withTempFolder {
-        folder =>
+        folder ⇒
           val data1 =
             "name=\"Nibbler\"\n" +
               "\n" +
@@ -60,7 +56,7 @@ class ConfiggySpec extends FunSpec with Matchers with StorageHelper with Logging
 
   it("should reload") {
     withTempFolder {
-      folder =>
+      folder ⇒
         val data1 =
           "<robot>\n" +
             "    name=\"Nibbler\"\n" +
@@ -77,8 +73,8 @@ class ConfiggySpec extends FunSpec with Matchers with StorageHelper with Logging
 
         var checked = false
         var checkedAlso = false
-        Configgy.subscribe("robot") { (attr: Option[ConfigMap]) => checked = true }
-        Configgy.subscribe("unchanged") { (attr: Option[ConfigMap]) => checkedAlso = true }
+        Configgy.subscribe("robot") { (attr: Option[ConfigMap]) ⇒ checked = true }
+        Configgy.subscribe("unchanged") { (attr: Option[ConfigMap]) ⇒ checkedAlso = true }
         checked should be(false)
 
         val data2 =
@@ -102,7 +98,7 @@ class ConfiggySpec extends FunSpec with Matchers with StorageHelper with Logging
 
   it("should change a nested value without invalidating ConfigMap references") {
     withTempFolder {
-      folder =>
+      folder ⇒
         val data1 =
           "<robot>\n" +
             "    name=\"Nibbler\"\n" +

@@ -2,7 +2,7 @@
  * Digi Configgy is a library for handling configurations
  *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
- * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2014 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -21,16 +21,11 @@ package org.digimead.configgy
 
 import java.io.File
 import java.lang.management.ManagementFactory
-
-import scala.collection.Map
-import scala.collection.mutable
-import scala.collection.mutable.HashMap
-
+import javax.{ management ⇒ jmx }
 import org.slf4j.LoggerFactory
-
-import javax.{ management => jmx }
-
-import language.implicitConversions
+import scala.collection.{ Map, mutable }
+import scala.collection.mutable.HashMap
+import scala.language.implicitConversions
 
 private abstract class Phase
 private case object VALIDATE_PHASE extends Phase
@@ -42,8 +37,8 @@ private class SubscriptionNode {
 
   def get(name: String): SubscriptionNode = {
     map.get(name) match {
-      case Some(x) => x
-      case None =>
+      case Some(x) ⇒ x
+      case None ⇒
         val node = new SubscriptionNode
         map(name) = node
         node
@@ -54,7 +49,7 @@ private class SubscriptionNode {
     val out = new StringBuilder("%d" format subscribers.size)
     if (map.size > 0) {
       out.append(" { ")
-      for (key <- map.keys) {
+      for (key ← map.keys) {
         out.append(key)
         out.append("=")
         out.append(map(key).toString)
@@ -73,10 +68,10 @@ private class SubscriptionNode {
     }
 
     // first, call all subscribers for this node.
-    for (subscriber <- subscribers) {
+    for (subscriber ← subscribers) {
       phase match {
-        case VALIDATE_PHASE => subscriber.validate(current, replacement)
-        case COMMIT_PHASE => subscriber.commit(current, replacement)
+        case VALIDATE_PHASE ⇒ subscriber.validate(current, replacement)
+        case COMMIT_PHASE ⇒ subscriber.commit(current, replacement)
       }
     }
 
@@ -86,23 +81,23 @@ private class SubscriptionNode {
      */
     var nextNodes: Iterator[(String, SubscriptionNode)] = null
     key match {
-      case Nil => nextNodes = map.iterator
-      case segment :: _ => {
+      case Nil ⇒ nextNodes = map.iterator
+      case segment :: _ ⇒ {
         map.get(segment) match {
-          case None => return // done!
-          case Some(node) => nextNodes = Iterator.single((segment, node))
+          case None ⇒ return // done!
+          case Some(node) ⇒ nextNodes = Iterator.single((segment, node))
         }
       }
     }
 
-    for ((segment, node) <- nextNodes) {
+    for ((segment, node) ← nextNodes) {
       val subCurrent = current match {
-        case None => None
-        case Some(x) => x.getConfigMap(segment)
+        case None ⇒ None
+        case Some(x) ⇒ x.getConfigMap(segment)
       }
       val subReplacement = replacement match {
-        case None => None
-        case Some(x) => x.getConfigMap(segment)
+        case None ⇒ None
+        case Some(x) ⇒ x.getConfigMap(segment)
       }
       node.validate(if (key == Nil) Nil else key.tail, subCurrent, subReplacement, phase)
     }
@@ -125,7 +120,7 @@ abstract class Configgy extends Configgy.Interface {
   private var jmxNodes: List[String] = Nil
   private var jmxPackageName: String = ""
   private var jmxSubscriptionKey: Option[SubscriptionKey] = None
-  private var reloadAction: Option[() => Unit] = None
+  private var reloadAction: Option[() ⇒ Unit] = None
 
   /**
    * Importer for resolving "include" lines when loading config files.
@@ -138,7 +133,7 @@ abstract class Configgy extends Configgy.Interface {
    * Read config data from a string and use it to populate this object.
    */
   def load(data: String) {
-    reloadAction = Some(() => configure(data))
+    reloadAction = Some(() ⇒ configure(data))
     reload()
   }
 
@@ -146,7 +141,7 @@ abstract class Configgy extends Configgy.Interface {
    * Read config data from a file and use it to populate this object.
    */
   def loadFile(filename: String) {
-    reloadAction = Some(() => configure(importer.importFile(filename)))
+    reloadAction = Some(() ⇒ configure(importer.importFile(filename)))
     reload()
   }
 
@@ -173,7 +168,7 @@ abstract class Configgy extends Configgy.Interface {
 
     if (root.isMonitored) {
       // throws exception if validation fails:
-      List(VALIDATE_PHASE, COMMIT_PHASE) foreach (p => subscribers.validate(Nil, Some(root), Some(newRoot), p))
+      List(VALIDATE_PHASE, COMMIT_PHASE) foreach (p ⇒ subscribers.validate(Nil, Some(root), Some(newRoot), p))
     }
 
     if (root.isMonitored) newRoot.setMonitored
@@ -188,16 +183,16 @@ abstract class Configgy extends Configgy.Interface {
     nextKey += 1
     var node = subscribers
     if (key ne null) {
-      for (segment <- key.split("\\.")) {
+      for (segment ← key.split("\\.")) {
         node = node.get(segment)
       }
     }
     node.subscribers += subscriber
-    subscriberKeys += Pair(subkey, (node, subscriber))
+    subscriberKeys += ((subkey, (node, subscriber)))
     new SubscriptionKey(this, subkey)
   }
 
-  def subscribe(key: String)(f: (Option[ConfigMap]) => Unit): SubscriptionKey = {
+  def subscribe(key: String)(f: (Option[ConfigMap]) ⇒ Unit): SubscriptionKey = {
     subscribe(key, new Subscriber {
       def validate(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {}
       def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit = {
@@ -208,12 +203,12 @@ abstract class Configgy extends Configgy.Interface {
 
   def subscribe(subscriber: Subscriber) = subscribe(null.asInstanceOf[String], subscriber)
 
-  override def subscribe(f: (Option[ConfigMap]) => Unit): SubscriptionKey = subscribe(null.asInstanceOf[String])(f)
+  override def subscribe(f: (Option[ConfigMap]) ⇒ Unit): SubscriptionKey = subscribe(null.asInstanceOf[String])(f)
 
   def unsubscribe(subkey: SubscriptionKey) = synchronized {
     subscriberKeys.get(subkey.id) match {
-      case None => false
-      case Some((node, sub)) => {
+      case None ⇒ false
+      case Some((node, sub)) ⇒ {
         node.subscribers -= sub
         subscriberKeys -= subkey.id
         true
@@ -233,12 +228,12 @@ abstract class Configgy extends Configgy.Interface {
    */
   def unregisterWithJmx() = {
     val mbs = ManagementFactory.getPlatformMBeanServer()
-    for (name <- jmxNodes) {
+    for (name ← jmxNodes) {
       log.debug("unregister jmx MBean " + name)
       mbs.unregisterMBean(new jmx.ObjectName(name))
     }
     jmxNodes = Nil
-    for (key <- jmxSubscriptionKey) unsubscribe(key)
+    for (key ← jmxSubscriptionKey) unsubscribe(key)
     jmxSubscriptionKey = None
   }
 
@@ -253,10 +248,10 @@ abstract class Configgy extends Configgy.Interface {
   def registerWithJmx(packageName: String): Unit = {
     val mbs = ManagementFactory.getPlatformMBeanServer()
     val nodes = root.getJmxNodes(packageName, "")
-    val nodeNames = nodes.map { case (name, bean) => name }
+    val nodeNames = nodes.map { case (name, bean) ⇒ name }
     // register any new nodes
-    nodes.filter { name => !(jmxNodes contains name) }.foreach {
-      case (name, bean) =>
+    nodes.filter { name ⇒ !(jmxNodes contains name) }.foreach {
+      case (name, bean) ⇒
         val jmxName = new jmx.ObjectName(name)
         log.debug("register jmx MBean " + name)
         // remove junk if necessary
@@ -265,7 +260,7 @@ abstract class Configgy extends Configgy.Interface {
         mbs.registerMBean(bean, jmxName)
     }
     // unregister nodes that vanished
-    (jmxNodes filterNot (nodeNames.contains)).foreach { name =>
+    (jmxNodes filterNot (nodeNames.contains)).foreach { name ⇒
       log.debug("unregister jmx MBean " + name)
       mbs.unregisterMBean(new jmx.ObjectName(name))
     }
@@ -273,14 +268,14 @@ abstract class Configgy extends Configgy.Interface {
     jmxNodes = nodeNames
     jmxPackageName = packageName
     if (jmxSubscriptionKey == None) {
-      jmxSubscriptionKey = Some(subscribe { _ => registerWithJmx(packageName) })
+      jmxSubscriptionKey = Some(subscribe { _ ⇒ registerWithJmx(packageName) })
     }
   }
 
   // -----  modifications that happen within monitored Attributes nodes
 
   @throws(classOf[ValidationException])
-  private def deepChange(name: String, key: String, operation: (ConfigMap, String) => Boolean): Boolean = synchronized {
+  private def deepChange(name: String, key: String, operation: (ConfigMap, String) ⇒ Boolean): Boolean = synchronized {
     val fullKey = if (name == "") (key) else (name + "." + key)
     val newRoot = root.copy
     val keyList = fullKey.split("\\.").toList
@@ -299,19 +294,19 @@ abstract class Configgy extends Configgy.Interface {
   }
 
   def deepSet(name: String, key: String, value: String) = {
-    deepChange(name, key, { (newRoot, fullKey) => newRoot(fullKey) = value; true })
+    deepChange(name, key, { (newRoot, fullKey) ⇒ newRoot(fullKey) = value; true })
   }
 
   def deepSet(name: String, key: String, value: Seq[String]) = {
-    deepChange(name, key, { (newRoot, fullKey) => newRoot(fullKey) = value; true })
+    deepChange(name, key, { (newRoot, fullKey) ⇒ newRoot(fullKey) = value; true })
   }
 
   def deepSet(name: String, key: String, value: ConfigMap) = {
-    deepChange(name, key, { (newRoot, fullKey) => newRoot.setConfigMap(fullKey, value); true })
+    deepChange(name, key, { (newRoot, fullKey) ⇒ newRoot.setConfigMap(fullKey, value); true })
   }
 
   def deepRemove(name: String, key: String): Boolean = {
-    deepChange(name, key, { (newRoot, fullKey) => newRoot.remove(fullKey) })
+    deepChange(name, key, { (newRoot, fullKey) ⇒ newRoot.remove(fullKey) })
   }
 
   // -----  implement AttributeMap by wrapping our root object:
@@ -408,7 +403,7 @@ object Configgy {
     def deepRemove(name: String, key: String): Boolean
     // -----  subscriptions
     def subscribe(key: String, subscriber: Subscriber): SubscriptionKey
-    def subscribe(key: String)(f: (Option[ConfigMap]) => Unit): SubscriptionKey
+    def subscribe(key: String)(f: (Option[ConfigMap]) ⇒ Unit): SubscriptionKey
     def subscribe(subscriber: Subscriber): SubscriptionKey
     def unsubscribe(subkey: SubscriptionKey)
     /**
@@ -451,7 +446,7 @@ object Configgy {
           log.debug("loading file {}", file)
           implementation.loadFile(file.getParent(), file.getName())
         } catch {
-          case e: Throwable =>
+          case e: Throwable ⇒
             log.error("Failed to load config file '%s'".format(file.getAbsolutePath()), e)
             throw e
         }
@@ -479,7 +474,7 @@ object Configgy {
           implementation.importer = new ResourceImporter(classLoader)
           implementation.loadFile(name)
         } catch {
-          case e: Throwable =>
+          case e: Throwable ⇒
             log.error("Failed to load config resource '%s'".format(name), e)
             throw e
         }
@@ -516,7 +511,7 @@ object Configgy {
       override protected val log = LoggerFactory.getLogger(getClass.getPackage().getName() + ".ConfiggyFromMap$$")
       def init() {
         log.debug("initialize " + this)
-        for ((k, v) <- m.iterator) this(k) = v
+        for ((k, v) ← m.iterator) this(k) = v
       }
       def dispose() {
         log.debug("dispose " + this)

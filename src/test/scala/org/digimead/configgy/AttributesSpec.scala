@@ -2,7 +2,7 @@
  * Digi Configgy is a library for handling configurations
  *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
- * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2014 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -19,17 +19,15 @@
 
 package org.digimead.configgy
 
+import org.digimead.configgy.Configgy.getImplementation
+import org.digimead.digi.lib.DependencyInjection
+import org.digimead.digi.lib.log.api.XLoggable
+import org.digimead.lib.test.LoggingHelper
+import org.scalatest.{ FunSpec, Matchers }
 import scala.Array.canBuildFrom
 import scala.util.Sorting
 
-import org.digimead.configgy.Configgy.getImplementation
-import org.digimead.digi.lib.DependencyInjection
-import org.digimead.digi.lib.log.api.Loggable
-import org.digimead.lib.test.LoggingHelper
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-
-class AttributesSpec extends FunSpec with Matchers with LoggingHelper with Loggable {
+class AttributesSpec extends FunSpec with Matchers with LoggingHelper with XLoggable {
   before {
     DependencyInjection(org.digimead.digi.lib.default, false)
     Schema.clear
@@ -156,7 +154,7 @@ class AttributesSpec extends FunSpec with Matchers with LoggingHelper with Logga
       // turn it into a sorted list, so we get a deterministic answer
       val keyList = map.keys.toList.toArray
       Sorting.quickSort(keyList)
-      (for (k <- keyList) yield (k + "=" + map(k))).mkString("{ ", ", ", " }") should be(
+      (for (k ← keyList) yield (k + "=" + map(k))).mkString("{ ", ", ", " }") should be(
         "{ age=8, diet.food=Meow Mix, diet.liquid=water, disposition=fighter, name=Communist }")
     }
     it("should copy") {

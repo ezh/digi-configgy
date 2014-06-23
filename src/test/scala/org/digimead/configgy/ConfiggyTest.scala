@@ -18,21 +18,16 @@
 
 package org.digimead.configgy
 
-import java.io.File
-import java.io.FileOutputStream
-
-import scala.collection.JavaConversions._
-
+import java.io.{ File, FileOutputStream }
 import org.digimead.configgy.Configgy.getImplementation
 import org.digimead.digi.lib.DependencyInjection
-import org.digimead.digi.lib.log.api.Loggable
-import org.digimead.lib.test.LoggingHelper
-import org.digimead.lib.test.StorageHelper
+import org.digimead.digi.lib.log.api.XLoggable
+import org.digimead.lib.test.{ LoggingHelper, StorageHelper }
 import org.mockito.Mockito
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
+import org.scalatest.{ FunSuite, Matchers }
+import scala.collection.JavaConversions.asScalaBuffer
 
-class ConfiggyTest extends FunSuite with Matchers with StorageHelper with LoggingHelper with Loggable {
+class ConfiggyTest extends FunSuite with Matchers with StorageHelper with LoggingHelper with XLoggable {
   implicit val timeout = 5000L
 
   before {
@@ -43,7 +38,7 @@ class ConfiggyTest extends FunSuite with Matchers with StorageHelper with Loggin
 
   test("test Configgy initialization with DefaultInit") {
     implicit val option = Mockito.times(3)
-    withMockitoLogCaptor { Configgy.setup(new Configgy.DefaultInit) } { logCaptor =>
+    withMockitoLogCaptor { Configgy.setup(new Configgy.DefaultInit) } { logCaptor ⇒
       val _1st = logCaptor.getAllValues()(0)
       _1st.getLevel() should be(org.apache.log4j.Level.DEBUG)
       _1st.getMessage.toString should startWith("dispose ")
@@ -60,7 +55,7 @@ class ConfiggyTest extends FunSuite with Matchers with StorageHelper with Loggin
 
   test("test Configgy initialization with DefaultInitFromFile") {
     withTempFolder {
-      folder =>
+      folder ⇒
         val data1 =
           "name=\"Nibbler\"\n" +
             "\n" +
@@ -70,7 +65,7 @@ class ConfiggyTest extends FunSuite with Matchers with StorageHelper with Loggin
             "</log>\n"
         writeConfigFile(folder, "test.conf", data1)
         implicit val option = Mockito.times(4)
-        withMockitoLogCaptor { Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf")) } { logCaptor =>
+        withMockitoLogCaptor { Configgy.setup(new Configgy.DefaultInitFromFile(folder.getAbsolutePath(), "test.conf")) } { logCaptor ⇒
           val _1st = logCaptor.getAllValues()(0)
           _1st.getLevel() should be(org.apache.log4j.Level.DEBUG)
           _1st.getMessage.toString should startWith("dispose ")

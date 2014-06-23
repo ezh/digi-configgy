@@ -2,7 +2,7 @@
  * Digi Configgy is a library for handling configurations
  *
  * Copyright 2009 Robey Pointer <robeypointer@gmail.com>
- * Copyright 2012-2013 Alexey Aksenov <ezh@ezh.msk.ru>
+ * Copyright 2012-2014 Alexey Aksenov <ezh@ezh.msk.ru>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -22,13 +22,11 @@ package org.digimead.configgy
 import org.digimead.configgy.Configgy.getImplementation
 import org.digimead.configgy.extensions.stringToConfiggyString
 import org.digimead.digi.lib.DependencyInjection
-import org.digimead.digi.lib.log.api.Loggable
-import org.digimead.lib.test.LoggingHelper
-import org.digimead.lib.test.StorageHelper
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.digimead.digi.lib.log.api.XLoggable
+import org.digimead.lib.test.{ LoggingHelper, StorageHelper }
+import org.scalatest.{ FunSpec, Matchers }
 
-class ConfigParserSpec extends FunSpec with Matchers with StorageHelper with LoggingHelper with Loggable {
+class ConfigParserSpec extends FunSpec with Matchers with StorageHelper with LoggingHelper with XLoggable {
   before {
     DependencyInjection(org.digimead.digi.lib.default, false)
     Schema.clear
