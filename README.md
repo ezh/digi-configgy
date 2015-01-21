@@ -21,7 +21,7 @@ included in the LICENSE file.
 Copyright
 ---------
 
-Copyright © 2012-2014 Alexey B. Aksenov/Ezh.
+Copyright © 2012-2015 Alexey B. Aksenov/Ezh.
 
 Copyright © 2009-2010 Robey Pointer.
 
