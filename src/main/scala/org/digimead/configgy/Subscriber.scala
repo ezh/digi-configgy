@@ -17,9 +17,8 @@
 
 package org.digimead.configgy
 
-
 /**
- * Interface for receiving notifications of changes to a {@link Config}
+ * Interface for receiving notifications of changes to a Config
  * object. When subscribed to an {@link AttributeMap} node, these methods
  * will be called to validate, and optionally commit, any changes that would
  * affect that node.
@@ -63,12 +62,11 @@ trait Subscriber {
   def commit(current: Option[ConfigMap], replacement: Option[ConfigMap]): Unit
 }
 
-
 /**
  * Key returned by a call to <code>AttributeMap.subscribe</code> which may
  * be used to unsubscribe from config change events.
  */
-class SubscriptionKey private[configgy](val config: Configgy.Interface, private[configgy] val id: Int) {
+class SubscriptionKey private[configgy] (val config: Configgy.Interface, private[configgy] val id: Int) {
   /**
    * Remove the subscription referenced by this key. After unsubscribing,
    * no more validate/commit events will be sent to this subscriber.
@@ -76,10 +74,9 @@ class SubscriptionKey private[configgy](val config: Configgy.Interface, private[
   def unsubscribe() = config.unsubscribe(this)
 }
 
-
 /**
  * Exception thrown by <code>Subscriber.validate</code> when a config change
- * must be rejected. If returned by a modification to a {@link Config} or
+ * must be rejected. If returned by a modification to a Config or
  * {@link AttributeMap} node, the modification has failed.
  */
 class ValidationException(reason: String) extends Exception(reason)
